@@ -1,3 +1,4 @@
+"use client";
 function Page() {
   return <div>Chat Page</div>;
 }
