@@ -3,6 +3,6 @@ import Cookies from "js-cookie";
 
 export const requestPredicate = (config: InternalAxiosRequestConfig) => {
   const token = Cookies.get("Authorization");
-  config.headers.set("Authorization", token);
+  config.headers.set("Authorization", `Bearer ${token}`);
   return config;
 };
