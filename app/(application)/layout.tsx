@@ -31,7 +31,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     })();
   }, [fetchUser]);
 
-  return <div className="bg-slate-50 h-screen">{children}</div>;
+  return <div className="bg-slate-100 h-screen">{children}</div>;
 }
 
 export default Layout;
