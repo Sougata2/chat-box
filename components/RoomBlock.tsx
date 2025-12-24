@@ -26,7 +26,7 @@ function RoomBlock({
           {otherParticipant?.firstName} {otherParticipant?.lastName}
         </div>
         <div className="text-xs">
-          {room.messages[0].sender?.email !== loggedInUser?.email
+          {room.messages[0].sender?.email === loggedInUser?.email
             ? "You: "
             : room.messages[0].sender?.firstName}
           {room.messages[0].message}
