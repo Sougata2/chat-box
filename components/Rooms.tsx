@@ -1,12 +1,19 @@
-import { useSelector } from "react-redux";
-import { RootState } from "@/app/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/store/store";
+import { selectRoom } from "@/app/store/chatSlice";
 import { Input } from "./ui/input";
+import { Room } from "@/app/types/room";
 
 import RoomBlock from "./RoomBlock";
 
 function Rooms() {
+  const dispatch = useDispatch<AppDispatch>();
   const rooms = useSelector((state: RootState) => state.rooms.rooms);
   const user = useSelector((state: RootState) => state.user.user);
+
+  async function selectRoomHandler(room: Room) {
+    dispatch(selectRoom(room));
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -18,7 +25,9 @@ function Rooms() {
       </div>
       <div className="h-full border-t border-slate-300 p-2">
         {rooms.map((room) => (
-          <RoomBlock key={room.id} loggedInUser={user} room={room} />
+          <div key={room.id} onClick={() => selectRoomHandler(room)}>
+            <RoomBlock loggedInUser={user} room={room} />
+          </div>
         ))}
       </div>
     </div>
