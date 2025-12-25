@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store/store";
 import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
 import { setUser } from "../store/userSlice";
 import { toast } from "sonner";
 import { auth } from "../clients/authClient";
@@ -12,6 +13,7 @@ import Cookies from "js-cookie";
 import React from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const fetchUser = useCallback(async () => {
     try {
@@ -21,15 +23,19 @@ function Layout({ children }: { children: React.ReactNode }) {
       dispatch(setUser(response.data));
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(axiosError.response?.data.message);
+      toast.error(axiosError.response?.data.message || axiosError.message);
     }
   }, [dispatch]);
 
   useEffect(() => {
-    (async () => {
-      await fetchUser();
-    })();
-  }, [fetchUser]);
+    if (Cookies.get("Authorization")) {
+      (async () => {
+        await fetchUser();
+      })();
+    } else {
+      router.push("/sign-in");
+    }
+  }, [fetchUser, router]);
 
   return <div className="bg-slate-100 h-screen">{children}</div>;
 }
