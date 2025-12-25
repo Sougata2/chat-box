@@ -18,11 +18,11 @@ function Page() {
 
   const fetchRooms = useCallback(async () => {
     try {
-      const response = await chat.get("/rooms/subscribed-rooms");
+      const response = await chat.get("/rooms/subscribed-rooms-summary");
       dispatch(setRooms(response.data));
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(axiosError.response?.data.message);
+      toast.error(axiosError.response?.data.message || axiosError.message);
     }
   }, [dispatch]);
 
