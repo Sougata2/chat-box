@@ -33,7 +33,7 @@ function Window() {
         </div>
       </div>
 
-      <div className="min-h-0 overflow-y-auto scrollbar-hide flex flex-col-reverse gap-5 py-2.5 px-5">
+      <div className="min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-5 py-2.5 px-5">
         {room?.messages.map((msg: Message) => {
           const isMe = msg.sender.email === user?.email;
           return (
