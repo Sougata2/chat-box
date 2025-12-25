@@ -1,7 +1,9 @@
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { selectRoom } from "@/app/store/chatSlice";
+import { toastError } from "./toastError";
 import { Input } from "./ui/input";
+import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
 
 import RoomBlock from "./RoomBlock";
@@ -12,7 +14,14 @@ function Rooms() {
   const user = useSelector((state: RootState) => state.user.user);
 
   async function selectRoomHandler(room: Room) {
-    dispatch(selectRoom(room));
+    try {
+      const response = await chat.get(
+        `/rooms/messages/${room.referenceNumber}`
+      );
+      dispatch(selectRoom({ ...room, messages: response.data }));
+    } catch (error) {
+      toastError(error);
+    }
   }
 
   return (
