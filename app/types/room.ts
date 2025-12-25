@@ -4,9 +4,15 @@ export interface Room {
   id: number | null;
   referenceNumber: string | null;
   participants: User[];
-  messages: Message[];
+  messages: Message[] | null;
   createAt: Date;
   updateAt: Date;
+  latestMessage: string | null;
+  latestMessageSenderEmail: string | null;
+  otherParticipantFirstName: string | null;
+  otherParticipantLastName: string | null;
+  latestMessageSentAt: Date | null;
+  latestMessageUpdatedAt: Date | null;
 }
 
 export interface Message {
