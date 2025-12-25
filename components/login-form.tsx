@@ -57,7 +57,7 @@ export function LoginForm({
       router.push("/chat");
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(axiosError.response?.data?.message);
+      toast.error(axiosError.response?.data?.message || axiosError.message);
     }
   }
 
