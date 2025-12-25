@@ -18,7 +18,7 @@ function Page() {
 
   const fetchRooms = useCallback(async () => {
     try {
-      const response = await chat.get("/rooms/subscribed-rooms-summary");
+      const response = await chat.get("/rooms/subscribed-rooms");
       dispatch(setRooms(response.data));
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
