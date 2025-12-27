@@ -6,6 +6,6 @@ export const requestPredicate = (config: InternalAxiosRequestConfig) => {
   if (!token) {
     throw new Error("Login Required");
   }
-  config.headers.set("Authorization", `Bearer ${token}`);
+  config.withCredentials = true;
   return config;
 };
