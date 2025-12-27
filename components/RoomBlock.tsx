@@ -29,7 +29,7 @@ function RoomBlock({
         <div className="text-xs">
           {room.messages[0].senderEmail === loggedInUser?.email
             ? "You: "
-            : `${room.messages[0].sender?.firstName}: `}
+            : `${otherParticipant?.firstName}: `}
           {room.messages[0].message}
         </div>
       </div>
