@@ -1,11 +1,15 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../store/store";
+import { useCallback, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store/store";
+import { addStreamedMessage } from "../store/roomSlice";
+import { unShiftMessage } from "../store/chatSlice";
 import { AxiosError } from "axios";
+import { toastError } from "@/components/toastError";
 import { useRouter } from "next/navigation";
 import { setUser } from "../store/userSlice";
+import { Message } from "../types/room";
 import { toast } from "sonner";
 import { auth } from "../clients/authClient";
 
@@ -15,6 +19,50 @@ import React from "react";
 function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const room = useSelector((state: RootState) => state.chat.room);
+
+  const connect = useCallback(() => {
+    try {
+      if (eventSourceRef.current) return;
+
+      const es = new EventSource(
+        "http://localhost:8080/chat-service/users/stream",
+        {
+          withCredentials: true,
+        }
+      );
+
+      es.onmessage = (event) => {
+        const message = JSON.parse(event.data) as Message;
+        dispatch(addStreamedMessage(message));
+        if (message.room.referenceNumber === room?.referenceNumber) {
+          dispatch(unShiftMessage(message));
+        }
+      };
+
+      es.onerror = (error) => {
+        toast.error(`${error}`);
+        es.close();
+        eventSourceRef.current = null;
+      };
+
+      eventSourceRef.current = es;
+    } catch (error) {
+      toastError(error);
+    }
+  }, [dispatch, room?.referenceNumber]);
+
+  const disconnect = useCallback(() => {
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    connect();
+    return disconnect;
+  }, [connect, disconnect]);
+
   const fetchUser = useCallback(async () => {
     try {
       const response = await auth.post("/auth/validate", {
