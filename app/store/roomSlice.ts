@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Room } from "../types/room";
+import { Message, Room } from "../types/room";
 
 export interface roomState {
   rooms: Room[];
@@ -19,8 +19,16 @@ const roomSlice = createSlice({
     resetRooms(state) {
       state.rooms = [];
     },
+    addStreamedMessage(state, action: PayloadAction<Message>) {
+      // if room exist for this user
+      const room = state.rooms.find(
+        (r) => r.referenceNumber === action.payload.room.referenceNumber
+      );
+
+      if (room) room.messages = [action.payload];
+    },
   },
 });
 
-export const { setRooms, resetRooms } = roomSlice.actions;
+export const { setRooms, resetRooms, addStreamedMessage } = roomSlice.actions;
 export default roomSlice.reducer;
