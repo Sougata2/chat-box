@@ -1,11 +1,28 @@
-import { RootState } from "@/app/store/store";
-import { useSelector } from "react-redux";
-import { User } from "@/app/types/user";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { AiOutlineSend } from "react-icons/ai";
+"use client";
+
+import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { AiOutlineSend } from "react-icons/ai";
+import { useSelector } from "react-redux";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toastError } from "./toastError";
+import { RootState } from "@/app/store/store";
+import { useEffect } from "react";
 import { Message } from "@/app/types/room";
+import { useForm } from "react-hook-form";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { chat } from "@/app/clients/chatClient";
+import { User } from "@/app/types/user";
+import { z } from "zod";
+
+const formSchema = z.object({
+  message: z.string(),
+  room: z.object({
+    referenceNumber: z.string(),
+  }),
+});
+
 function Window() {
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
@@ -13,6 +30,33 @@ function Window() {
   const otherParticipant = room?.participants.find(
     (u: User) => u.email !== user?.email
   );
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      message: "",
+      room: {
+        referenceNumber: "",
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (room?.referenceNumber) {
+      form.setValue("room.referenceNumber", room.referenceNumber);
+    }
+  }, [form, room?.referenceNumber]);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const response = await chat.post("/messages/send", values);
+      const data = response.data;
+      console.log(data);
+      form.setValue("message", "");
+    } catch (error) {
+      toastError(error);
+    }
+  }
 
   return (
     <div className="rounded-2xl h-full min-h-0 grid grid-rows-[auto_1fr_auto] gap-2">
@@ -53,23 +97,39 @@ function Window() {
         })}
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-300 flex gap-3.5 items-center px-4">
-        <Input
-          placeholder="Type a message"
-          className="
-            h-12
-            text-base!
-            placeholder:font-medium
-            border-none
-            shadow-none
-            focus-visible:ring-0
-            focus-visible:ring-offset-0
-          "
-        />
-        <Button variant="outline" className="w-14">
-          <AiOutlineSend size={20} className="text-emerald-500" />
-        </Button>
-      </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="bg-white rounded-lg border border-slate-300 grid grid-cols-[1fr_auto] gap-3.5 items-center px-4">
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      autoComplete="off"
+                      placeholder="Type a message"
+                      className="
+                                  h-12
+                                  text-base!
+                                  placeholder:font-medium
+                                  border-none
+                                  shadow-none
+                                  focus-visible:ring-0
+                                  focus-visible:ring-offset-0
+                                  "
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Button variant="outline" className="w-14">
+              <AiOutlineSend size={20} className="text-emerald-500" />
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
