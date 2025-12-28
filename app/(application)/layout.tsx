@@ -38,7 +38,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       if (eventSourceRef.current) return;
 
       const es = new EventSource(
-        "http://localhost:8080/chat-service/users/stream",
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service/users/stream`,
         {
           withCredentials: true,
         }
