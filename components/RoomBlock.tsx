@@ -17,9 +17,9 @@ function RoomBlock({
     <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer">
       <Avatar>
         <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-        <AvatarFallback>
-          {otherParticipant?.firstName.substring(0, 1)}
-          {otherParticipant?.lastName.substring(0, 1)}
+        <AvatarFallback className="capitalize">
+          <span>{otherParticipant?.firstName.substring(0, 1)}</span>
+          <span>{otherParticipant?.lastName.substring(0, 1)}</span>
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col gap-0.5">
