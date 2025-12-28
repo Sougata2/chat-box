@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { LuMessageSquarePlus } from "react-icons/lu";
 import { selectRoom } from "@/app/store/chatSlice";
 import { toastError } from "./toastError";
 import { Input } from "./ui/input";
@@ -27,9 +28,18 @@ function Rooms() {
   return (
     <div className="flex flex-col gap-3">
       <div className="container flex flex-col gap-2">
-        <div className="font-semibold text-2xl">Chats</div>
-        <div>
-          <Input type="text" placeholder="search contacts" />
+        <div className="flex justify-between items-center">
+          <div className="font-semibold text-2xl">Chats</div>
+          <div className="hover:bg-slate-100 p-2 rounded-2xl transition-colors duration-300 hover:delay-150 cursor-pointer">
+            <LuMessageSquarePlus size={20} />
+          </div>
+        </div>
+        <div className="rounded-4xl">
+          <Input
+            type="text"
+            placeholder="search contacts"
+            className="rounded-4xl bg-slate-100 placeholder:text-slate-700 placeholder:text-[16px] focus:bg-white"
+          />
         </div>
       </div>
       <div className="h-full border-t border-slate-300 p-2">
