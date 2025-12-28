@@ -10,12 +10,12 @@ export interface Room {
 }
 
 export interface Message {
-  id: number;
+  id: number | null;
   uuid: string;
   message: string;
   sender: User;
   room: Room;
-  createAt: Date;
-  updateAt: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
   senderEmail: string | null;
 }
