@@ -3,17 +3,20 @@
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { AiOutlineSend } from "react-icons/ai";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/store/store";
+import { unShiftMessage } from "@/app/store/chatSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
-import { RootState } from "@/app/store/store";
 import { useEffect } from "react";
 import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
+import { FiClock } from "react-icons/fi";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
+import { format } from "date-fns";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -24,6 +27,7 @@ const formSchema = z.object({
 });
 
 function Window() {
+  const dispatch = useDispatch<AppDispatch>();
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
 
@@ -49,7 +53,16 @@ function Window() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await chat.post("/messages/send", values);
+      const payload = {
+        ...values,
+        uuid: Number(new Date()).toString(),
+        sender: {
+          email: user?.email,
+        },
+        senderEmail: user?.email,
+      } as Message;
+      dispatch(unShiftMessage(payload));
+      // await chat.post("/messages/send", payload);
       form.setValue("message", "");
     } catch (error) {
       toastError(error);
@@ -80,15 +93,23 @@ function Window() {
           const isMe = msg.sender.email === user?.email;
           return (
             <div
-              key={msg.id}
+              key={msg.uuid}
               className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`${
-                  isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"
-                } border border-slate-300 w-fit p-3 rounded-lg max-w-md`}
+                className={`inline-grid shrink-0 min-w-20 max-w-md rounded-lg border p-2 grid-cols-[1fr_auto] items-end gap-x-2 
+                  ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
+                  `}
               >
-                {msg.message}
+                <div className="wrap-break-word">{msg.message}</div>
+
+                <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1">
+                  {format(
+                    msg?.createdAt ? new Date(msg?.createdAt) : new Date(),
+                    "hh:mm aaa"
+                  )}
+                  {!msg?.createdAt && <FiClock size={11} />}
+                </div>
               </div>
             </div>
           );
