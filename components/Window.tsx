@@ -70,7 +70,7 @@ function Window() {
         </Avatar>
 
         <div className="flex flex-col">
-          <span className="text-base font-medium">
+          <span className="text-slate-700 font-medium capitalize">
             {otherParticipant?.firstName} {otherParticipant?.lastName}
           </span>
           <span className="text-xs text-slate-500">online</span>

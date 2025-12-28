@@ -23,7 +23,7 @@ function RoomBlock({
         </AvatarFallback>
       </Avatar>
       <div className="flex flex-col gap-0.5">
-        <div className="text-slate-700 font-medium">
+        <div className="text-slate-700 font-medium capitalize">
           {otherParticipant?.firstName} {otherParticipant?.lastName}
         </div>
         <div className="text-xs">
