@@ -26,7 +26,7 @@ function RoomBlock({
         <div className="text-slate-700 font-medium capitalize">
           {otherParticipant?.firstName} {otherParticipant?.lastName}
         </div>
-        <div className="text-xs line-clamp-1">
+        <div className="text-[13px] font-medium text-slate-500 line-clamp-1">
           {(room.messages[0].senderEmail || room.messages[0].sender.email) ===
           loggedInUser?.email
             ? "You: "
