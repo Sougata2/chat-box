@@ -11,6 +11,7 @@ export interface Room {
 
 export interface Message {
   id: number;
+  uuid: string;
   message: string;
   sender: User;
   room: Room;
