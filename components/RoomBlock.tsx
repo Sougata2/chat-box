@@ -22,7 +22,7 @@ function RoomBlock({
           <span>{otherParticipant?.lastName.substring(0, 1)}</span>
         </AvatarFallback>
       </Avatar>
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col">
         <div className="text-slate-700 font-medium capitalize">
           {otherParticipant?.firstName} {otherParticipant?.lastName}
         </div>
