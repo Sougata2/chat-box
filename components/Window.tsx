@@ -49,9 +49,7 @@ function Window() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const response = await chat.post("/messages/send", values);
-      const data = response.data;
-      console.log(data);
+      await chat.post("/messages/send", values);
       form.setValue("message", "");
     } catch (error) {
       toastError(error);
