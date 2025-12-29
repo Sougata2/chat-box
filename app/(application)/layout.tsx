@@ -21,16 +21,11 @@ function Layout({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch<AppDispatch>();
   const eventSourceRef = useRef<EventSource | null>(null);
   const receiveAudioRef = useRef<HTMLAudioElement | null>(null);
-  const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
 
   useEffect(() => {
     receiveAudioRef.current = new Audio("/received.mp3");
-  }, []);
-
-  useEffect(() => {
-    sendAudioRef.current = new Audio("/sent.mp3");
   }, []);
 
   const connect = useCallback(() => {
@@ -51,15 +46,10 @@ function Layout({ children }: { children: React.ReactNode }) {
           dispatch(unShiftMessage(message));
         }
 
-        if (message?.sender?.email !== user?.email) {
+        if ((message?.sender?.email || message.senderEmail) !== user?.email) {
           if (receiveAudioRef.current) {
             receiveAudioRef.current.currentTime = 0; // replay instantly
             receiveAudioRef.current.play().catch(() => {});
-          }
-        } else {
-          if (sendAudioRef.current) {
-            sendAudioRef.current.currentTime = 0; // replay instantly
-            sendAudioRef.current.play().catch(() => {});
           }
         }
       };
