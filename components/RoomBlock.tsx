@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Room } from "@/app/types/room";
 import { User } from "@/app/types/user";
+import { FiClock } from "react-icons/fi";
 
 function RoomBlock({
   room,
@@ -27,7 +28,12 @@ function RoomBlock({
           {otherParticipant?.firstName} {otherParticipant?.lastName}
         </div>
         {room.messages.length > 0 && (
-          <div className="text-[13px] font-medium text-slate-500 line-clamp-1">
+          <div className="flex gap-0.5 items-center text-[13px] font-medium text-slate-500 line-clamp-1">
+            {!room.messages[0].createdAt && (
+              <span className="mt-0.5">
+                <FiClock size={11} />
+              </span>
+            )}
             {(room.messages[0].senderEmail || room.messages[0].sender.email) ===
             loggedInUser?.email
               ? "You: "
