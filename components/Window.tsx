@@ -2,21 +2,22 @@
 
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { AiOutlineSend } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { addStreamedMessage } from "@/app/store/roomSlice";
+import { useEffect, useRef } from "react";
 import { unShiftMessage } from "@/app/store/chatSlice";
+import { AiOutlineSend } from "react-icons/ai";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
-import { useEffect } from "react";
 import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
 import { FiClock } from "react-icons/fi";
 import { Button } from "./ui/button";
+import { format } from "date-fns";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
-import { format } from "date-fns";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -28,6 +29,8 @@ const formSchema = z.object({
 
 function Window() {
   const dispatch = useDispatch<AppDispatch>();
+  const shouldPlaySendNoti = useRef(false);
+  const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
 
@@ -51,6 +54,18 @@ function Window() {
     }
   }, [form, room?.referenceNumber]);
 
+  useEffect(() => {
+    sendAudioRef.current = new Audio("/sent.mp3");
+  }, []);
+
+  useEffect(() => {
+    if (sendAudioRef.current && shouldPlaySendNoti.current) {
+      sendAudioRef.current.currentTime = 0; // replay instantly
+      sendAudioRef.current.play().catch(() => {});
+      shouldPlaySendNoti.current = false;
+    }
+  }, [room?.messages.length]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const payload = {
@@ -62,6 +77,8 @@ function Window() {
         senderEmail: user?.email,
       } as Message;
       dispatch(unShiftMessage(payload));
+      dispatch(addStreamedMessage(payload));
+      shouldPlaySendNoti.current = true;
       // await chat.post("/messages/send", payload);
       form.setValue("message", "");
     } catch (error) {
@@ -117,7 +134,7 @@ function Window() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => form.handleSubmit(onSubmit)(e)}>
           <div className="bg-white rounded-lg border border-slate-300 grid grid-cols-[1fr_auto] gap-3.5 items-center px-4">
             <FormField
               control={form.control}
