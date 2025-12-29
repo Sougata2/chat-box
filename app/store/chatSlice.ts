@@ -21,6 +21,11 @@ const chatSlice = createSlice({
       if (!state.room.messages) state.room.messages = [];
       state.room.messages.unshift(action.payload);
     },
+    refreshPendingMessage(state, action: PayloadAction<Message>) {
+      state.room?.messages.forEach((m: Message) => {
+        if (m.uuid === action.payload.uuid) m = action.payload;
+      });
+    },
   },
 });
 

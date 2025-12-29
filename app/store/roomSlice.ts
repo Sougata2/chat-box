@@ -27,6 +27,16 @@ const roomSlice = createSlice({
 
       if (room) room.messages = [action.payload];
     },
+    refreshLatestMessage(state, action: PayloadAction<Message>) {
+      const room = state.rooms.find(
+        (r: Room) => r.referenceNumber === action.payload.room.referenceNumber
+      ) as Room;
+
+      room.messages =
+        room.messages[0].uuid === action.payload.uuid
+          ? [action.payload]
+          : [room.messages[0]];
+    },
   },
 });
 
