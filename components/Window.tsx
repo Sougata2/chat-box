@@ -64,7 +64,7 @@ function Window() {
       sendAudioRef.current.play().catch(() => {});
       shouldPlaySendNoti.current = false;
     }
-  }, [room?.messages.length]);
+  }, [room?.uuids.length]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -106,7 +106,8 @@ function Window() {
       </div>
 
       <div className="min-h-0 overflow-y-auto scrollbar-hide flex flex-col-reverse gap-5 py-2.5 px-5">
-        {room?.messages.map((msg: Message) => {
+        {room?.uuids.map((uuid: string) => {
+          const msg = room.messages[uuid];
           const isMe = msg.sender.email === user?.email;
           return (
             <div

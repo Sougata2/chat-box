@@ -17,9 +17,9 @@ function Rooms() {
   async function selectRoomHandler(room: Room) {
     try {
       const response = await chat.get(
-        `/rooms/messages/${room.referenceNumber}`
+        `/rooms/opt-room/${room.referenceNumber}`
       );
-      dispatch(selectRoom({ ...room, messages: response.data }));
+      dispatch(selectRoom(response.data));
     } catch (error) {
       toastError(error);
     }

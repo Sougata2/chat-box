@@ -4,7 +4,8 @@ export interface Room {
   id: number | null;
   referenceNumber: string | null;
   participants: User[];
-  messages: Message[];
+  uuids: string[];
+  messages: Record<string, Message>;
   createAt: Date;
   updateAt: Date;
 }
