@@ -40,7 +40,13 @@ function Layout({ children }: { children: React.ReactNode }) {
       );
 
       es.onmessage = (event) => {
-        const message = JSON.parse(event.data) as Message;
+        if (!event.data) return;
+        let message: Message;
+        try {
+          message = JSON.parse(event.data) as Message;
+        } catch {
+          return;
+        }
         dispatch(updateLatestMessage(message));
         if (message.room.referenceNumber === room?.referenceNumber) {
           dispatch(unShiftMessageOrRefreshPendingChat(message));
@@ -57,8 +63,8 @@ function Layout({ children }: { children: React.ReactNode }) {
       es.onerror = (error) => {
         console.log(error);
         // toast.error(`${error}`);
-        es.close();
-        eventSourceRef.current = null;
+        // es.close();
+        // eventSourceRef.current = null;
       };
 
       eventSourceRef.current = es;
