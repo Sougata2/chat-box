@@ -2,11 +2,11 @@
 
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { unShiftMessageOrRefreshPendingChat } from "@/app/store/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
-import { addStreamedMessage } from "@/app/store/roomSlice";
+import { updateLatestMessage } from "@/app/store/roomSlice";
 import { useEffect, useRef } from "react";
-import { unShiftMessage } from "@/app/store/chatSlice";
 import { AiOutlineSend } from "react-icons/ai";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
@@ -76,8 +76,8 @@ function Window() {
         },
         senderEmail: user?.email,
       } as Message;
-      dispatch(unShiftMessage(payload));
-      dispatch(addStreamedMessage(payload));
+      dispatch(unShiftMessageOrRefreshPendingChat(payload));
+      dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
       // await chat.post("/messages/send", payload);
       form.setValue("message", "");

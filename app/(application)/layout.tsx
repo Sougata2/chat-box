@@ -1,10 +1,10 @@
 "use client";
 
+import { unShiftMessageOrRefreshPendingChat } from "../store/chatSlice";
 import { useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store/store";
-import { addStreamedMessage } from "../store/roomSlice";
-import { unShiftMessage } from "../store/chatSlice";
+import { updateLatestMessage } from "../store/roomSlice";
 import { AxiosError } from "axios";
 import { toastError } from "@/components/toastError";
 import { useRouter } from "next/navigation";
@@ -41,9 +41,9 @@ function Layout({ children }: { children: React.ReactNode }) {
 
       es.onmessage = (event) => {
         const message = JSON.parse(event.data) as Message;
-        dispatch(addStreamedMessage(message));
+        dispatch(updateLatestMessage(message));
         if (message.room.referenceNumber === room?.referenceNumber) {
-          dispatch(unShiftMessage(message));
+          dispatch(unShiftMessageOrRefreshPendingChat(message));
         }
 
         if ((message?.sender?.email || message.senderEmail) !== user?.email) {

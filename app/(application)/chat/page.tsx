@@ -3,10 +3,10 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect } from "react";
 import { AppDispatch, RootState } from "@/app/store/store";
-import { AxiosError } from "axios";
+import { toastError } from "@/components/toastError";
 import { setRooms } from "@/app/store/roomSlice";
-import { toast } from "sonner";
 import { chat } from "@/app/clients/chatClient";
+import { Room } from "@/app/types/room";
 
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
@@ -19,10 +19,22 @@ function Page() {
   const fetchRooms = useCallback(async () => {
     try {
       const response = await chat.get("/rooms/subscribed-rooms");
+
+      response.data.references.forEach((ref: string) => {
+        response.data.rooms[ref] = {
+          ...response.data.rooms[ref],
+          uuids: response.data.rooms[ref].messages[0]
+            ? [response.data.rooms[ref].messages[0].uuid]
+            : [],
+          messages: {
+            [response.data.rooms[ref].messages[0]?.uuid]:
+              response.data.rooms[ref].messages[0],
+          },
+        } as Room;
+      });
       dispatch(setRooms(response.data));
     } catch (error) {
-      const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(axiosError.response?.data.message || axiosError.message);
+      toastError(error);
     }
   }, [dispatch]);
 

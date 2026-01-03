@@ -5,20 +5,17 @@ import { selectRoom } from "@/app/store/chatSlice";
 import { toastError } from "./toastError";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
-import { Room } from "@/app/types/room";
 
 import RoomBlock from "./RoomBlock";
 
 function Rooms() {
   const dispatch = useDispatch<AppDispatch>();
-  const rooms = useSelector((state: RootState) => state.rooms.rooms);
+  const rooms = useSelector((state: RootState) => state.rooms);
   const user = useSelector((state: RootState) => state.user.user);
 
-  async function selectRoomHandler(room: Room) {
+  async function selectRoomHandler(reference: string) {
     try {
-      const response = await chat.get(
-        `/rooms/opt-room/${room.referenceNumber}`
-      );
+      const response = await chat.get(`/rooms/opt-room/${reference}`);
       dispatch(selectRoom(response.data));
     } catch (error) {
       toastError(error);
@@ -43,9 +40,9 @@ function Rooms() {
         </div>
       </div>
       <div className="h-full border-t border-slate-300 p-2">
-        {rooms.map((room) => (
-          <div key={room.id} onClick={() => selectRoomHandler(room)}>
-            <RoomBlock loggedInUser={user} room={room} />
+        {rooms.references.map((reference) => (
+          <div key={reference} onClick={() => selectRoomHandler(reference)}>
+            <RoomBlock loggedInUser={user} room={rooms.rooms[reference]} />
           </div>
         ))}
       </div>

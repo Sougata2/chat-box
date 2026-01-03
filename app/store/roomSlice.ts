@@ -2,43 +2,52 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Message, Room } from "../types/room";
 
 export interface roomState {
-  rooms: Room[];
+  references: string[];
+  rooms: Record<string, Room>;
 }
 
 const initialState: roomState = {
-  rooms: [],
+  references: [],
+  rooms: {},
 };
 
 const roomSlice = createSlice({
   initialState,
   name: "rooms",
   reducers: {
-    setRooms(state, action: PayloadAction<Room[]>) {
-      state.rooms = action.payload;
+    setRooms(state, action: PayloadAction<roomState>) {
+      state.rooms = action.payload.rooms;
+      state.references = action.payload.references;
     },
     resetRooms(state) {
-      state.rooms = [];
+      state.rooms = {};
+      state.references = [];
     },
-    addStreamedMessage(state, action: PayloadAction<Message>) {
-      // if room exist for this user
-      const room = state.rooms.find(
-        (r) => r.referenceNumber === action.payload.room.referenceNumber
-      );
-
-      if (room) room.messages = [action.payload];
-    },
-    refreshLatestMessage(state, action: PayloadAction<Message>) {
-      const room = state.rooms.find(
-        (r: Room) => r.referenceNumber === action.payload.room.referenceNumber
-      ) as Room;
-
-      room.messages =
-        room.messages[0].uuid === action.payload.uuid
-          ? [action.payload]
-          : [room.messages[0]];
+    updateLatestMessage(state, action: PayloadAction<Message>) {
+      const message: Message = action.payload;
+      const { referenceNumber } = action.payload.room;
+      if (!referenceNumber) return;
+      if (!state.rooms[referenceNumber]) {
+        const newRoom: Room = {
+          ...message.room,
+          messages: { [message.uuid]: message },
+          uuids: [message.uuid],
+        };
+        state.references.unshift(newRoom.referenceNumber);
+        state.rooms[referenceNumber] = newRoom;
+      } else {
+        state.rooms[referenceNumber] = {
+          ...state.rooms[referenceNumber],
+          messages: { [message.uuid]: message },
+          uuids: [message.uuid],
+        };
+        const index = state.references.indexOf(referenceNumber);
+        state.references.splice(index, 1);
+        state.references.unshift(referenceNumber);
+      }
     },
   },
 });
 
-export const { setRooms, resetRooms, addStreamedMessage } = roomSlice.actions;
+export const { setRooms, resetRooms, updateLatestMessage } = roomSlice.actions;
 export default roomSlice.reducer;
