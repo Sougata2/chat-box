@@ -10,6 +10,7 @@ import { useEffect, useRef } from "react";
 import { AiOutlineSend } from "react-icons/ai";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
+import { TbChecks } from "react-icons/tb";
 import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
 import { FiClock } from "react-icons/fi";
@@ -79,7 +80,7 @@ function Window() {
       dispatch(unShiftMessageOrRefreshPendingChat(payload));
       dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
-      // await chat.post("/messages/send", payload);
+      await chat.post("/messages/send", payload);
       form.setValue("message", "");
     } catch (error) {
       toastError(error);
@@ -127,6 +128,9 @@ function Window() {
                     "hh:mm aaa"
                   )}
                   {!msg?.createdAt && <FiClock size={11} />}
+                  {isMe && msg?.createdAt && (
+                    <TbChecks className="text-emerald-700" size={20} />
+                  )}
                 </div>
               </div>
             </div>
