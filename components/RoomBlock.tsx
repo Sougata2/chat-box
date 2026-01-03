@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
 import { Room } from "@/app/types/room";
 import { User } from "@/app/types/user";
@@ -32,6 +33,11 @@ function RoomBlock({
             {!room.messages[room.uuids[0]]?.createdAt && (
               <span className="mt-0.5">
                 <FiClock size={11} />
+              </span>
+            )}
+            {room.messages[room.uuids[0]]?.createdAt && (
+              <span className="mt-0.5">
+                <TbChecks className="text-slate-500" size={16} />
               </span>
             )}
             {(room.messages[room.uuids[0]]?.senderEmail ||
