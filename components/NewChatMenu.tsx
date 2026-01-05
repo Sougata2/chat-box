@@ -1,13 +1,19 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/store/store";
 import { FaArrowLeft } from "react-icons/fa6";
 import { MdGroupAdd } from "react-icons/md";
 import { toastError } from "./toastError";
+import { selectRoom } from "@/app/store/chatSlice";
 import { Input } from "./ui/input";
 import { User } from "@/app/types/user";
 import { chat } from "@/app/clients/chatClient";
 
 function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
+  const dispatch = useDispatch<AppDispatch>();
+  const loggedInUser = useSelector((state: RootState) => state.user.user);
+  const rooms = useSelector((state: RootState) => state.rooms.rooms);
   const [contacts, setContacts] = useState<User[]>();
 
   const fetchContacts = useCallback(async () => {
@@ -24,6 +30,21 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
       await fetchContacts();
     })();
   }, [fetchContacts]);
+
+  async function handleStartPrivateChat(participant: User) {
+    try {
+      if (!loggedInUser?.email || !participant.email) return;
+      const roomRef = [participant.email, loggedInUser?.email]
+        .sort((a, b) => a?.localeCompare(b))
+        .join("::");
+      if (rooms[roomRef]) {
+        const response = await chat.get(`/rooms/opt-room/${roomRef}`);
+        dispatch(selectRoom(response.data));
+      }
+    } catch (error) {
+      toastError(error);
+    }
+  }
 
   return (
     <div className="">
@@ -62,6 +83,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
             <div
               key={c.id}
               className="flex flex-col gap-2 px-2 py-4 hover:rounded-xl hover:bg-slate-100 cursor-pointer"
+              onClick={() => handleStartPrivateChat(c)}
             >
               <div className="flex items-center gap-3">
                 <Avatar>
