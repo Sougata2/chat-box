@@ -59,7 +59,6 @@ export function SignupForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      console.log(values);
       await auth.post(
         `/auth/register-with-role?role=${"ROLE_CHAT_USER"}`,
         values
