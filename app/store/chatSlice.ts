@@ -21,6 +21,10 @@ const chatSlice = createSlice({
       if (!state.room.uuids) state.room.uuids = [];
       if (!state.room.messages) state.room.messages = {};
 
+      if (!state.room.id) {
+        state.room.id = action.payload.room.id;
+      }
+
       const { uuid } = action.payload;
 
       if (!state.room.messages[uuid]) {

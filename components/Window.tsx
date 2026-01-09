@@ -71,16 +71,22 @@ function Window() {
     try {
       const payload = {
         ...values,
-        uuid: Number(new Date()).toString(),
+        uuid: user?.id + Number(new Date()).toString(),
         sender: {
           email: user?.email,
         },
         senderEmail: user?.email,
       } as Message;
+
       dispatch(unShiftMessageOrRefreshPendingChat(payload));
       dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
-      await chat.post("/messages/send", payload);
+      if (room && !room?.id) {
+        const newRoomPayload = { ...room, messages: [payload] };
+        await chat.post("/rooms/new-chat", newRoomPayload);
+      } else {
+        await chat.post("/messages/send", payload);
+      }
       form.setValue("message", "");
     } catch (error) {
       toastError(error);
