@@ -6,8 +6,8 @@ export interface Room {
   participants: User[];
   uuids: string[];
   messages: Record<string, Message>;
-  createAt: Date;
-  updateAt: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 export interface Message {
