@@ -9,6 +9,7 @@ import { selectRoom } from "@/app/store/chatSlice";
 import { Input } from "./ui/input";
 import { User } from "@/app/types/user";
 import { chat } from "@/app/clients/chatClient";
+import { Room } from "@/app/types/room";
 
 function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -40,6 +41,17 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
       if (rooms[roomRef]) {
         const response = await chat.get(`/rooms/opt-room/${roomRef}`);
         dispatch(selectRoom(response.data));
+      } else {
+        const newRoom: Room = {
+          id: null,
+          referenceNumber: roomRef,
+          participants: [{ ...loggedInUser }, { ...participant }],
+          messages: {},
+          uuids: [],
+          createdAt: null,
+          updatedAt: null,
+        };
+        dispatch(selectRoom(newRoom));
       }
     } catch (error) {
       toastError(error);
