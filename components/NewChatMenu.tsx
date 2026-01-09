@@ -104,8 +104,8 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
                     alt="@shadcn"
                   />
                   <AvatarFallback className="capitalize">
-                    <span>{c.firstName}</span>
-                    <span>{c.lastName}</span>
+                    <span>{c.firstName.substring(0, 1)}</span>
+                    <span>{c.lastName.substring(0, 1)}</span>
                   </AvatarFallback>
                 </Avatar>
                 <div>
