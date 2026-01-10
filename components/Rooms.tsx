@@ -30,10 +30,10 @@ function Rooms() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="h-full min-h-0 flex flex-col">
       {isNewChatMenuOpen && <NewChatMenu closeNewChatMenu={closeNewChatMenu} />}
       {!isNewChatMenuOpen && (
-        <div>
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="container flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <div className="font-semibold text-2xl">Chats</div>
@@ -49,7 +49,7 @@ function Rooms() {
               />
             </div>
           </div>
-          <div className="h-full border-t border-slate-300 p-2">
+          <div className="flex-1 min-h-0 overflow-y-auto border-t border-slate-300 p-2 scrollbar-hide">
             {rooms.references.map((reference) => (
               <div key={reference} onClick={() => selectRoomHandler(reference)}>
                 <RoomBlock loggedInUser={user} room={rooms.rooms[reference]} />

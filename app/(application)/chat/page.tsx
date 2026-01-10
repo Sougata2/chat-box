@@ -49,7 +49,7 @@ function Page() {
       <div className="bg-white border rounded-2xl border-slate-300 container">
         profile
       </div>
-      <div className="bg-white border rounded-2xl border-slate-300">
+      <div className="bg-white border rounded-2xl border-slate-300 min-h-0 pb-3">
         <Rooms />
       </div>
       <div className="rounded-2xl min-h-0">{isRoomSelected && <Window />}</div>
