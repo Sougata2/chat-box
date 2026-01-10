@@ -5,7 +5,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { HiMiniXMark } from "react-icons/hi2";
 import { User } from "@/app/types/user";
 
-function NewGroup({
+function NewGroupMemberSelector({
   contacts,
   closeWindow,
 }: {
@@ -114,4 +114,4 @@ function NewGroup({
   );
 }
 
-export default NewGroup;
+export default NewGroupMemberSelector;

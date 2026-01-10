@@ -11,18 +11,22 @@ import { User } from "@/app/types/user";
 import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
 
-import NewGroup from "./NewGroupMemberSelector";
+import NewGroupMemberSelector from "./NewGroupMemberSelector";
 
 function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
   const rooms = useSelector((state: RootState) => state.rooms.rooms);
   const [contacts, setContacts] = useState<User[]>([]);
-  const [isNewGroupWindowOpen, setIsNewGroupWindowOpen] =
-    useState<boolean>(false);
+  const [
+    isNewGroupMemberSelectorWindowOpen,
+    setIsNewGroupMemberSelectorWindowOpen,
+  ] = useState<boolean>(false);
 
-  const openNewGroupWindow = () => setIsNewGroupWindowOpen(true);
-  const closeNewGroupWindow = () => setIsNewGroupWindowOpen(false);
+  const openNewGroupMemberSelectorWindow = () =>
+    setIsNewGroupMemberSelectorWindowOpen(true);
+  const closeNewGroupWindow = () =>
+    setIsNewGroupMemberSelectorWindowOpen(false);
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -67,10 +71,13 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
 
   return (
     <>
-      {isNewGroupWindowOpen && (
-        <NewGroup contacts={contacts} closeWindow={closeNewGroupWindow} />
+      {isNewGroupMemberSelectorWindowOpen && (
+        <NewGroupMemberSelector
+          contacts={contacts}
+          closeWindow={closeNewGroupWindow}
+        />
       )}
-      {!isNewGroupWindowOpen && (
+      {!isNewGroupMemberSelectorWindowOpen && (
         <div className="h-full flex flex-col min-h-0">
           <div className="py-4 px-4 flex gap-5 items-center shrink-0">
             <FaArrowLeft
@@ -91,7 +98,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
 
           <div className="px-2 mt-4 shrink-0">
             <button
-              onClick={openNewGroupWindow}
+              onClick={openNewGroupMemberSelectorWindow}
               className="w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-slate-100 transition-colors"
             >
               <div className="flex items-center justify-center size-12 rounded-full bg-emerald-500 text-white">
