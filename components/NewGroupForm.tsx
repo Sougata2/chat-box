@@ -7,14 +7,17 @@ import {
   FormItem,
   Form,
 } from "./ui/form";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/store/store";
+import { v4 as uuidv4 } from "uuid";
 import { FaArrowLeft } from "react-icons/fa6";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSelector } from "react-redux";
 import { toastError } from "./toastError";
-import { RootState } from "@/app/store/store";
+import { selectRoom } from "@/app/store/chatSlice";
 import { MdCheck } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import { Input } from "./ui/input";
+import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
 import { z } from "zod";
 
@@ -29,6 +32,7 @@ function NewGroupForm({
   selectedContacts: User[];
   closeWindow: () => void;
 }) {
+  const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,8 +47,9 @@ function NewGroupForm({
       if (!loggedInUser) return;
       const participants = selectedContacts.map((sc) => ({ email: sc.email }));
       participants.push({ email: loggedInUser?.email });
-      const payload = { ...values, participants };
-      console.log(payload);
+      const payload = { ...values, referenceNumber: uuidv4(), participants };
+      const response = await chat.post("/rooms/new-group", payload);
+      dispatch(selectRoom({ ...response.data, uuids: [], messages: {} }));
     } catch (error) {
       toastError(error);
     }
