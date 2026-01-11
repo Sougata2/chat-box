@@ -8,6 +8,7 @@ import { AppDispatch, RootState } from "@/app/store/store";
 import { updateLatestMessage } from "@/app/store/roomSlice";
 import { useEffect, useRef } from "react";
 import { AiOutlineSend } from "react-icons/ai";
+import { getNameColor } from "@/lib/utils";
 import { GroupAvatar } from "./GroupAvatar";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
@@ -119,7 +120,16 @@ function Window() {
               {otherParticipant?.firstName} {otherParticipant?.lastName}
             </span>
           )}
-          <span className="text-xs text-slate-500">online</span>
+          {room?.groupName && (
+            <span className="text-xs text-slate-500">
+              {room?.participants
+                .map((p) => `${p.firstName} ${p.lastName}`)
+                .join(", ")}
+            </span>
+          )}
+          {!room?.groupName && (
+            <span className="text-xs text-slate-500">online</span>
+          )}
         </div>
       </div>
 
@@ -133,21 +143,34 @@ function Window() {
               className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`inline-grid shrink-0 min-w-20 max-w-md rounded-lg border p-2 grid-cols-[1fr_auto] items-end gap-x-2 
+                className={`inline-grid shrink-0 min-w-30 max-w-md rounded-lg border p-2 grid-cols-[1fr_auto] items-end gap-x-2 
                   ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
                   `}
               >
-                <div className="wrap-break-word">{msg.message}</div>
+                <div className="flex flex-col">
+                  {!isMe && (
+                    <div
+                      className={`text-xs font-semibold ${getNameColor(
+                        msg.sender.firstName.toLowerCase()
+                      )} h-3 -translate-y-1`}
+                    >
+                      {msg.sender.firstName} {msg.sender.lastName}
+                    </div>
+                  )}
+                  <div className="wrap-break-word">{msg.message}</div>
 
-                <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1">
-                  {format(
-                    msg?.createdAt ? new Date(msg?.createdAt) : new Date(),
-                    "hh:mm aaa"
-                  )}
-                  {!msg?.createdAt && <FiClock size={11} />}
-                  {isMe && msg?.createdAt && (
-                    <TbChecks className="text-emerald-700" size={20} />
-                  )}
+                  <div className="flex justify-end h-2.5">
+                    <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1 translate-x-2">
+                      {format(
+                        msg?.createdAt ? new Date(msg?.createdAt) : new Date(),
+                        "hh:mm aaa"
+                      )}
+                      {!msg?.createdAt && <FiClock size={11} />}
+                      {isMe && msg?.createdAt && (
+                        <TbChecks className="text-emerald-700" size={20} />
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -167,15 +190,7 @@ function Window() {
                     <Input
                       autoComplete="off"
                       placeholder="Type a message"
-                      className="
-                                  h-12
-                                  text-base!
-                                  placeholder:font-medium
-                                  border-none
-                                  shadow-none
-                                  focus-visible:ring-0
-                                  focus-visible:ring-offset-0
-                                  "
+                      className="h-12 text-base! placeholder:font-medium border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                       {...field}
                     />
                   </FormControl>
