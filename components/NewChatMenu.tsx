@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { v4 as uuidv4 } from "uuid";
 import { FaArrowLeft } from "react-icons/fa6";
 import { MdGroupAdd } from "react-icons/md";
 import { toastError } from "./toastError";
@@ -46,9 +47,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
   async function handleStartPrivateChat(participant: User) {
     try {
       if (!loggedInUser?.email || !participant.email) return;
-      const roomRef = [participant.email, loggedInUser?.email]
-        .sort((a, b) => a?.localeCompare(b))
-        .join("::");
+      const roomRef = uuidv4();
       if (rooms[roomRef]) {
         const response = await chat.get(`/rooms/opt-room/${roomRef}`);
         dispatch(selectRoom(response.data));
@@ -59,6 +58,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
           participants: [{ ...loggedInUser }, { ...participant }],
           messages: {},
           uuids: [],
+          groupName: null,
           createdAt: null,
           updatedAt: null,
         };
