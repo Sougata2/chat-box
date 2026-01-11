@@ -25,7 +25,7 @@ const roomSlice = createSlice({
     },
     addRoom(state, action: PayloadAction<Room>) {
       const newRoom = action.payload;
-      // state.references = [newRoom.referenceNumber, ...state.references];
+      state.references = [newRoom.referenceNumber, ...state.references];
       state.rooms = {
         ...state.rooms,
         [newRoom.referenceNumber]: { ...newRoom },
