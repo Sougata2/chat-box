@@ -3,11 +3,11 @@ import { AppDispatch, RootState } from "@/app/store/store";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { selectRoom } from "@/app/store/chatSlice";
 import { toastError } from "./toastError";
+import { useState } from "react";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 
 import RoomBlock from "./RoomBlock";
-import { useState } from "react";
 import NewChatMenu from "./NewChatMenu";
 
 function Rooms() {

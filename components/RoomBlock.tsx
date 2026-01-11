@@ -28,7 +28,7 @@ function RoomBlock({
           </AvatarFallback>
         </Avatar>
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1 min-w-0">
         {room.groupName && (
           <div className="text-slate-700 font-medium capitalize">
             {room.groupName}
@@ -40,23 +40,23 @@ function RoomBlock({
           </div>
         )}
         {room.uuids.length > 0 && (
-          <div className="flex gap-0.5 items-center text-[13px] font-medium text-slate-500 line-clamp-1">
+          <div className="flex items-center gap-1 text-[13px] font-medium text-slate-500">
             {!room.messages[room.uuids[0]]?.createdAt && (
-              <span className="mt-0.5">
-                <FiClock size={11} />
-              </span>
+              <FiClock size={11} className="shrink-0" />
             )}
+
             {room.messages[room.uuids[0]]?.createdAt && (
-              <span className="mt-0.5">
-                <TbChecks className="text-slate-500" size={16} />
-              </span>
+              <TbChecks size={16} className="shrink-0 text-slate-500" />
             )}
-            {(room.messages[room.uuids[0]]?.senderEmail ||
-              room.messages[room.uuids[0]]?.sender?.email) ===
-            loggedInUser?.email
-              ? "You: "
-              : `${otherParticipant?.firstName}: `}
-            {room.messages[room.uuids[0]]?.message}
+
+            <span className="flex-1 min-w-0 line-clamp-1">
+              {(room.messages[room.uuids[0]]?.senderEmail ||
+                room.messages[room.uuids[0]]?.sender?.email) ===
+              loggedInUser?.email
+                ? "You: "
+                : `${otherParticipant?.firstName}: `}
+              {room.messages[room.uuids[0]]?.message}
+            </span>
           </div>
         )}
       </div>
