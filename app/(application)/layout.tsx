@@ -2,9 +2,9 @@
 
 import { unShiftMessageOrRefreshPendingChat } from "../store/chatSlice";
 import { useCallback, useEffect, useRef } from "react";
+import { addRoom, updateLatestMessage } from "../store/roomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store/store";
-import { updateLatestMessage } from "../store/roomSlice";
 import { AxiosError } from "axios";
 import { toastError } from "@/components/toastError";
 import { useRouter } from "next/navigation";
@@ -39,7 +39,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         }
       );
 
-      es.onmessage = (event) => {
+      es.addEventListener("MESSAGE", (event) => {
         if (!event.data) return;
         let message: Message;
         try {
@@ -58,7 +58,24 @@ function Layout({ children }: { children: React.ReactNode }) {
             receiveAudioRef.current.play().catch(() => {});
           }
         }
-      };
+      });
+
+      es.addEventListener("ROOM", (event) => {
+        if (!event.data) return;
+        try {
+          const room = JSON.parse(event.data);
+          dispatch(
+            addRoom({
+              ...room,
+              uuids: room.uuids ? room.uuids : [],
+              messages: room.messages ? room.messages : {},
+            })
+          );
+        } catch (error) {
+          console.log("Failed to parse created Room", error);
+          return;
+        }
+      });
 
       es.onerror = (error) => {
         console.log(error);
