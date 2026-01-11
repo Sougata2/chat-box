@@ -3,6 +3,7 @@ import { User } from "./user";
 export interface Room {
   id: number | null;
   referenceNumber: string;
+  groupName: string | null;
   participants: User[];
   uuids: string[];
   messages: Record<string, Message>;
