@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { GroupAvatar } from "./GroupAvatar";
 import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
 import { Room } from "@/app/types/room";
@@ -17,17 +18,27 @@ function RoomBlock({
 
   return (
     <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer">
-      <Avatar>
-        <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-        <AvatarFallback className="capitalize">
-          <span>{otherParticipant?.firstName.substring(0, 1)}</span>
-          <span>{otherParticipant?.lastName.substring(0, 1)}</span>
-        </AvatarFallback>
-      </Avatar>
+      {room?.groupName && <GroupAvatar />}
+      {!room?.groupName && (
+        <Avatar className="h-10 w-10">
+          <AvatarImage src="https://github.com/shadcn.png" />
+          <AvatarFallback>
+            {otherParticipant?.firstName?.[0]}
+            {otherParticipant?.lastName?.[0]}
+          </AvatarFallback>
+        </Avatar>
+      )}
       <div className="flex flex-col">
-        <div className="text-slate-700 font-medium capitalize">
-          {otherParticipant?.firstName} {otherParticipant?.lastName}
-        </div>
+        {room.groupName && (
+          <div className="text-slate-700 font-medium capitalize">
+            {room.groupName}
+          </div>
+        )}
+        {!room.groupName && (
+          <div className="text-slate-700 font-medium capitalize">
+            {otherParticipant?.firstName} {otherParticipant?.lastName}
+          </div>
+        )}
         {room.uuids.length > 0 && (
           <div className="flex gap-0.5 items-center text-[13px] font-medium text-slate-500 line-clamp-1">
             {!room.messages[room.uuids[0]]?.createdAt && (

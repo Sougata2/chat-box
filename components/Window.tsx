@@ -8,6 +8,7 @@ import { AppDispatch, RootState } from "@/app/store/store";
 import { updateLatestMessage } from "@/app/store/roomSlice";
 import { useEffect, useRef } from "react";
 import { AiOutlineSend } from "react-icons/ai";
+import { GroupAvatar } from "./GroupAvatar";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
 import { TbChecks } from "react-icons/tb";
@@ -96,18 +97,28 @@ function Window() {
   return (
     <div className="rounded-2xl h-full min-h-0 grid grid-rows-[auto_1fr_auto] gap-2">
       <div className="h-16 px-4 flex items-center gap-3 bg-white rounded-lg border border-slate-300">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>
-            {otherParticipant?.firstName?.[0]}
-            {otherParticipant?.lastName?.[0]}
-          </AvatarFallback>
-        </Avatar>
+        {room?.groupName && <GroupAvatar />}
+        {!room?.groupName && (
+          <Avatar className="h-10 w-10">
+            <AvatarImage src="https://github.com/shadcn.png" />
+            <AvatarFallback>
+              {otherParticipant?.firstName?.[0]}
+              {otherParticipant?.lastName?.[0]}
+            </AvatarFallback>
+          </Avatar>
+        )}
 
         <div className="flex flex-col">
-          <span className="text-slate-700 font-medium capitalize">
-            {otherParticipant?.firstName} {otherParticipant?.lastName}
-          </span>
+          {room?.groupName && (
+            <span className="text-slate-700 font-medium capitalize">
+              {room?.groupName}
+            </span>
+          )}
+          {!room?.groupName && (
+            <span className="text-slate-700 font-medium capitalize">
+              {otherParticipant?.firstName} {otherParticipant?.lastName}
+            </span>
+          )}
           <span className="text-xs text-slate-500">online</span>
         </div>
       </div>
