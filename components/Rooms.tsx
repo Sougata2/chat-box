@@ -7,8 +7,8 @@ import { useState } from "react";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 
-import RoomBlock from "./RoomBlock";
 import NewChatMenu from "./NewChatMenu";
+import RoomBlock from "./RoomBlock";
 
 function Rooms() {
   const dispatch = useDispatch<AppDispatch>();
