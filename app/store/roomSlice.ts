@@ -25,6 +25,7 @@ const roomSlice = createSlice({
     },
     addRoom(state, action: PayloadAction<Room>) {
       const newRoom = action.payload;
+      if (!newRoom.referenceNumber) return;
       state.references = [newRoom.referenceNumber, ...state.references];
       state.rooms = {
         ...state.rooms,
@@ -33,7 +34,7 @@ const roomSlice = createSlice({
     },
     updateLatestMessage(state, action: PayloadAction<Message>) {
       const message: Message = action.payload;
-      const { referenceNumber } = action.payload.room;
+      const { referenceNumber } = message.room;
       if (!referenceNumber) return;
       if (!state.rooms[referenceNumber]) {
         const newRoom: Room = {
@@ -41,7 +42,7 @@ const roomSlice = createSlice({
           messages: { [message.uuid]: message },
           uuids: [message.uuid],
         };
-        state.references.unshift(newRoom.referenceNumber);
+        state.references.unshift(referenceNumber);
         state.rooms[referenceNumber] = newRoom;
       } else {
         state.rooms[referenceNumber] = {
