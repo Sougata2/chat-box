@@ -48,7 +48,10 @@ function Layout({ children }: { children: React.ReactNode }) {
           return;
         }
         dispatch(updateLatestMessage(message));
-        if (message.room.referenceNumber === room?.referenceNumber) {
+        if (
+          message.room.referenceNumber === room?.referenceNumber ||
+          room?.messages[message.uuid]
+        ) {
           dispatch(unShiftMessageOrRefreshPendingChat(message));
         }
 
@@ -88,7 +91,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     } catch (error) {
       toastError(error);
     }
-  }, [dispatch, room?.referenceNumber, user?.email]);
+  }, [dispatch, room?.messages, room?.referenceNumber, user?.email]);
 
   const disconnect = useCallback(() => {
     eventSourceRef.current?.close();
