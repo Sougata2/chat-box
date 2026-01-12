@@ -25,6 +25,10 @@ const chatSlice = createSlice({
         state.room.id = action.payload.room.id;
       }
 
+      if (!state.room.referenceNumber) {
+        state.room.referenceNumber = action.payload.room.referenceNumber;
+      }
+
       const { uuid } = action.payload;
 
       if (!state.room.messages[uuid]) {
