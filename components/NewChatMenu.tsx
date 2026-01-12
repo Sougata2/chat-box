@@ -2,11 +2,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
-import { v4 as uuidv4 } from "uuid";
 import { FaArrowLeft } from "react-icons/fa6";
 import { MdGroupAdd } from "react-icons/md";
 import { toastError } from "./toastError";
 import { selectRoom } from "@/app/store/chatSlice";
+import { AxiosError } from "axios";
 import { Input } from "./ui/input";
 import { User } from "@/app/types/user";
 import { chat } from "@/app/clients/chatClient";
@@ -17,7 +17,6 @@ import NewGroupMemberSelector from "./NewGroupMemberSelector";
 function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
-  const rooms = useSelector((state: RootState) => state.rooms.rooms);
   const [contacts, setContacts] = useState<User[]>([]);
   const [
     isNewGroupMemberSelectorWindowOpen,
@@ -45,26 +44,29 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
   }, [fetchContacts]);
 
   async function handleStartPrivateChat(participant: User) {
+    if (!loggedInUser?.email || !participant.email) return;
     try {
-      if (!loggedInUser?.email || !participant.email) return;
-      const roomRef = uuidv4();
-      if (rooms[roomRef]) {
-        const response = await chat.get(`/rooms/opt-room/${roomRef}`);
-        dispatch(selectRoom(response.data));
-      } else {
+      const response = await chat.get(
+        `/rooms/find-and-get-room-opt/${participant.email}`
+      );
+      dispatch(selectRoom(response.data));
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      if (axiosError.status === 404) {
         const newRoom: Room = {
           id: null,
-          referenceNumber: roomRef,
+          referenceNumber: null,
           participants: [{ ...loggedInUser }, { ...participant }],
           messages: {},
           uuids: [],
+          roomType: null,
           groupName: null,
           createdAt: null,
           updatedAt: null,
         };
         dispatch(selectRoom(newRoom));
+        return;
       }
-    } catch (error) {
       toastError(error);
     }
   }
