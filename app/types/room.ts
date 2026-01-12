@@ -2,7 +2,8 @@ import { User } from "./user";
 
 export interface Room {
   id: number | null;
-  referenceNumber: string;
+  roomType: string | null;
+  referenceNumber: string | null;
   groupName: string | null;
   participants: User[];
   uuids: string[];
