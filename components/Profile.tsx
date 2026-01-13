@@ -1,25 +1,47 @@
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { LuMessageSquareText } from "react-icons/lu";
-import { useSelector } from "react-redux";
-import { RootState } from "@/app/store/store";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenu,
 } from "./ui/dropdown-menu";
 import {
-  IconCreditCard,
-  IconLogout,
   IconNotification,
+  IconCreditCard,
   IconUserCircle,
+  IconLogout,
 } from "@tabler/icons-react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/store/store";
+import { LuMessageSquareText } from "react-icons/lu";
+import { toastError } from "./toastError";
+import { resetRooms } from "@/app/store/roomSlice";
+import { resetChat } from "@/app/store/chatSlice";
+import { resetUser } from "@/app/store/userSlice";
+import { useRouter } from "next/navigation";
+
+import Cookies from "js-cookie";
 
 function Profile() {
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
+
+  function logout() {
+    try {
+      dispatch(resetUser());
+      dispatch(resetRooms());
+      dispatch(resetChat());
+      Cookies.remove("Authorization");
+      router.replace("/sign-in");
+    } catch (error) {
+      toastError(error);
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-between py-4 h-full">
       {/* TOP SECTION */}
@@ -81,7 +103,7 @@ function Profile() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={logout}>
               <IconLogout />
               Log out
             </DropdownMenuItem>
