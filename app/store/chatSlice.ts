@@ -16,6 +16,9 @@ const chatSlice = createSlice({
     selectRoom(state, action: PayloadAction<Room>) {
       state.room = action.payload;
     },
+    resetChat(state) {
+      state.room = null;
+    },
     unShiftMessageOrRefreshPendingChat(state, action: PayloadAction<Message>) {
       if (!state.room) return;
       if (!state.room.uuids) state.room.uuids = [];
@@ -40,6 +43,6 @@ const chatSlice = createSlice({
   },
 });
 
-export const { selectRoom, unShiftMessageOrRefreshPendingChat } =
+export const { selectRoom, resetChat, unShiftMessageOrRefreshPendingChat } =
   chatSlice.actions;
 export default chatSlice.reducer;
