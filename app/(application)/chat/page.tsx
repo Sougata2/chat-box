@@ -8,9 +8,9 @@ import { setRooms } from "@/app/store/roomSlice";
 import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
 
+import Profile from "@/components/Profile";
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
-import Profile from "@/components/Profile";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
