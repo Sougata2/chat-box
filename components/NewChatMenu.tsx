@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { FaArrowLeft } from "react-icons/fa6";
@@ -22,6 +22,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
     isNewGroupMemberSelectorWindowOpen,
     setIsNewGroupMemberSelectorWindowOpen,
   ] = useState<boolean>(false);
+  const [query, setQuery] = useState<string>("");
 
   const openNewGroupMemberSelectorWindow = () =>
     setIsNewGroupMemberSelectorWindowOpen(true);
@@ -42,6 +43,13 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
       await fetchContacts();
     })();
   }, [fetchContacts]);
+
+  function matchesSearch(contact: User, query: string) {
+    if (!query) return true;
+    const text =
+      `${contact.email} ${contact.firstName} ${contact.lastName}`.toLowerCase();
+    return text.includes(query.toLowerCase());
+  }
 
   async function handleStartPrivateChat(participant: User) {
     if (!loggedInUser?.email || !participant.email) return;
@@ -92,6 +100,10 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
 
           <div className="px-4 shrink-0">
             <Input
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setQuery(e.target.value)
+              }
+              value={query}
               type="text"
               placeholder="Search contacts"
               className="rounded-4xl bg-slate-100 placeholder:text-slate-700 placeholder:text-[16px] focus:bg-white"
@@ -118,25 +130,27 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
             </div>
 
             <div className="flex flex-col gap-2.5">
-              {contacts?.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-3 px-2 py-4 rounded-xl hover:bg-slate-100 cursor-pointer"
-                  onClick={() => handleStartPrivateChat(c)}
-                >
-                  <Avatar>
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback className="capitalize">
-                      {c.firstName[0]}
-                      {c.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
+              {contacts
+                .filter((c) => matchesSearch(c, query))
+                ?.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-3 px-2 py-4 rounded-xl hover:bg-slate-100 cursor-pointer"
+                    onClick={() => handleStartPrivateChat(c)}
+                  >
+                    <Avatar>
+                      <AvatarImage src="https://github.com/shadcn.png" />
+                      <AvatarFallback className="capitalize">
+                        {c.firstName[0]}
+                        {c.lastName[0]}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <div>
-                    {c.firstName} {c.lastName}
+                    <div>
+                      {c.firstName} {c.lastName}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
