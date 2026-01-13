@@ -152,7 +152,7 @@ function Window() {
                     <div
                       className={`text-xs font-semibold ${getNameColor(
                         msg.sender.firstName.toLowerCase()
-                      )} h-3 -translate-y-1`}
+                      )} h-3 -translate-y-1 capitalize`}
                     >
                       {msg.sender.firstName} {msg.sender.lastName}
                     </div>
