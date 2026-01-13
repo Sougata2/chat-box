@@ -54,6 +54,8 @@ function Window() {
   useEffect(() => {
     if (room?.referenceNumber) {
       form.setValue("room.referenceNumber", room.referenceNumber);
+    } else {
+      form.setValue("room.referenceNumber", "");
     }
   }, [form, room?.referenceNumber]);
 
