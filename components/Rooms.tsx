@@ -3,9 +3,10 @@ import { AppDispatch, RootState } from "@/app/store/store";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { selectRoom } from "@/app/store/chatSlice";
 import { toastError } from "./toastError";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
+import { Room } from "@/app/types/room";
 
 import NewChatMenu from "./NewChatMenu";
 import RoomBlock from "./RoomBlock";
@@ -16,9 +17,22 @@ function Rooms() {
   const user = useSelector((state: RootState) => state.user.user);
 
   const [isNewChatMenuOpen, setIsNewChatMenuOpen] = useState<boolean>(false);
+  const [query, setQuery] = useState<string>("");
 
   const openNewChatMenu = () => setIsNewChatMenuOpen(true);
   const closeNewChatMenu = () => setIsNewChatMenuOpen(false);
+
+  function matchsSearch(room: Room, query: string) {
+    if (!query) return true;
+    const participantsString: string = room.participants
+      .filter((p) => p.email !== user?.email)
+      .map((p) => `${p.firstName} ${p.lastName}`)
+      .join(" ");
+    const text = `${room.groupName || ""} ${participantsString}`;
+    console.log(text);
+
+    return text.toLowerCase().includes(query.toLowerCase());
+  }
 
   async function selectRoomHandler(reference: string) {
     try {
@@ -43,6 +57,10 @@ function Rooms() {
             </div>
             <div className="rounded-4xl">
               <Input
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setQuery(e.target.value)
+                }
+                value={query}
                 type="text"
                 placeholder="search chat"
                 className="rounded-4xl bg-slate-100 placeholder:text-slate-700 placeholder:text-[16px] focus:bg-white"
@@ -50,11 +68,19 @@ function Rooms() {
             </div>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto border-t border-slate-300 p-2 scrollbar-hide">
-            {rooms.references.map((reference) => (
-              <div key={reference} onClick={() => selectRoomHandler(reference)}>
-                <RoomBlock loggedInUser={user} room={rooms.rooms[reference]} />
-              </div>
-            ))}
+            {rooms.references
+              .filter((r) => matchsSearch(rooms.rooms[r], query))
+              .map((reference) => (
+                <div
+                  key={reference}
+                  onClick={() => selectRoomHandler(reference)}
+                >
+                  <RoomBlock
+                    loggedInUser={user}
+                    room={rooms.rooms[reference]}
+                  />
+                </div>
+              ))}
           </div>
         </div>
       )}
