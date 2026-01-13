@@ -10,6 +10,7 @@ import { Room } from "@/app/types/room";
 
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
+import Profile from "@/components/Profile";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
@@ -45,9 +46,9 @@ function Page() {
   }, [fetchRooms]);
 
   return (
-    <div className="grid grid-cols-[1fr_6fr_15fr] h-screen gap-4 py-2 px-3">
-      <div className="bg-white border rounded-2xl border-slate-300 container">
-        profile
+    <div className="grid grid-cols-[70px_6fr_15fr] h-screen gap-4 py-2 px-3">
+      <div className="bg-white border rounded-2xl border-slate-300">
+        <Profile />
       </div>
       <div className="bg-white border rounded-2xl border-slate-300 min-h-0 pb-3">
         <Rooms />
