@@ -21,4 +21,6 @@ export interface Message {
   createdAt: Date | null;
   updatedAt: Date | null;
   senderEmail: string | null;
+  senderFirstName: string | null;
+  senderLastName: string | null;
 }
