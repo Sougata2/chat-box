@@ -24,7 +24,7 @@ import { User } from "@/app/types/user";
 import { z } from "zod";
 
 const formSchema = z.object({
-  message: z.string(),
+  message: z.string().nonempty(),
   room: z.object({
     referenceNumber: z.string(),
   }),
