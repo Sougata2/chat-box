@@ -54,7 +54,7 @@ function RoomBlock({
                 room.messages[room.uuids[0]]?.sender?.email) ===
               loggedInUser?.email
                 ? "You: "
-                : `${otherParticipant?.firstName}: `}
+                : `${room.messages[room.uuids[0]]?.senderFirstName}: `}
               {room.messages[room.uuids[0]]?.message}
             </span>
           </div>
