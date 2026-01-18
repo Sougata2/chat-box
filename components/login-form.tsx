@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,8 @@ import { z } from "zod";
 
 import Cookies from "js-cookie";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { toastError } from "./toastError";
+import { chat } from "@/app/clients/chatClient";
 
 export function LoginForm({
   className,
@@ -47,6 +49,31 @@ export function LoginForm({
     },
   });
 
+  async function subscribeToPushNotification() {
+    let subscription = null;
+    if (!("serviceWorker" in navigator)) {
+      toast.warning("Service Worker not supported");
+      return;
+    }
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      });
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+
+    try {
+      if (subscription) {
+        await chat.post("/push-notification/subscribe", subscription);
+      }
+    } catch (error) {
+      toastError(error);
+    }
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const response = await auth.post("/auth/login", values);
@@ -55,6 +82,7 @@ export function LoginForm({
         expires: new Date(response.data.expiration),
       });
       router.push("/chat");
+      await subscribeToPushNotification();
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       toast.error(axiosError.response?.data?.message || axiosError.message);
