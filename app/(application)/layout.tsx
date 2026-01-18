@@ -69,6 +69,32 @@ function Layout({ children }: { children: React.ReactNode }) {
         }
       });
 
+      es.addEventListener("NEW_CHAT", (event) => {
+        if (!event.data) return;
+        let message: Message;
+        try {
+          message = JSON.parse(event.data) as Message;
+        } catch {
+          return;
+        }
+        dispatch(updateLatestMessage(message));
+        const isSameRoomOpen =
+          (room?.referenceNumber === null || room?.referenceNumber === "") &&
+          room.participants.find((p) => p.email === message.senderEmail);
+
+        if (isSameRoomOpen) {
+          dispatch(unShiftMessageOrRefreshPendingChat(message));
+        }
+
+        if ((message?.sender?.email || message.senderEmail) !== user?.email) {
+          if (receiveAudioRef.current) {
+            receiveAudioRef.current.currentTime = 0; // replay instantly
+            receiveAudioRef.current.play().catch(() => {});
+          }
+        }
+        console.log("After => ", room);
+      });
+
       es.addEventListener("ROOM", (event) => {
         if (!event.data) return;
         try {
@@ -97,7 +123,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     } catch (error) {
       toastError(error);
     }
-  }, [dispatch, room?.messages, room?.referenceNumber, user?.email]);
+  }, [dispatch, room, user]);
 
   const disconnect = useCallback(() => {
     eventSourceRef.current?.close();
