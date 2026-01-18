@@ -38,7 +38,7 @@ function Window() {
   const user = useSelector((state: RootState) => state.user.user);
 
   const otherParticipant = room?.participants.find(
-    (u: User) => u.email !== user?.email
+    (u: User) => u.email !== user?.email,
   );
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -153,7 +153,7 @@ function Window() {
                   {!isMe && (
                     <div
                       className={`text-xs font-semibold ${getNameColor(
-                        msg.sender.firstName.toLowerCase()
+                        msg.sender.firstName.toLowerCase(),
                       )} h-3 -translate-y-1 capitalize`}
                     >
                       {msg.sender.firstName} {msg.sender.lastName}
@@ -165,7 +165,7 @@ function Window() {
                     <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1 translate-x-2">
                       {format(
                         msg?.createdAt ? new Date(msg?.createdAt) : new Date(),
-                        "hh:mm aaa"
+                        "hh:mm aaa",
                       )}
                       {!msg?.createdAt && <FiClock size={11} />}
                       {isMe && msg?.createdAt && (
