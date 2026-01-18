@@ -25,6 +25,12 @@ function Layout({ children }: { children: React.ReactNode }) {
   const user = useSelector((state: RootState) => state.user.user);
 
   useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  }, []);
+
+  useEffect(() => {
     receiveAudioRef.current = new Audio("/received.mp3");
   }, []);
 
