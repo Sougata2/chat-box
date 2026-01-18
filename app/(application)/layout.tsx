@@ -42,7 +42,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         `${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service/users/stream`,
         {
           withCredentials: true,
-        }
+        },
       );
 
       es.addEventListener("MESSAGE", (event) => {
@@ -78,7 +78,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               ...room,
               uuids: room.uuids ? room.uuids : [],
               messages: room.messages ? room.messages : {},
-            })
+            }),
           );
         } catch (error) {
           console.log("Failed to parse created Room", error);
