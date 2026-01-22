@@ -1,40 +1,44 @@
 "use client";
 
 import {
-  Form,
   FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
   FormMessage,
+  FormField,
+  FormLabel,
+  FormItem,
+  Form,
 } from "./ui/form";
 import {
-  Field,
   FieldDescription,
-  FieldGroup,
   FieldSeparator,
+  FieldGroup,
+  Field,
 } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/app/store/store";
 import { AxiosError } from "axios";
+import { toastError } from "./toastError";
 import { useRouter } from "next/navigation";
+import { setAuth } from "@/app/store/userSlice";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { auth } from "@/app/clients/authClient";
+import { chat } from "@/app/clients/chatClient";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
-import Cookies from "js-cookie";
 import Link from "next/link";
-import { toastError } from "./toastError";
-import { chat } from "@/app/clients/chatClient";
+import { User } from "@/app/types/user";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const formSchema = z.object({
     email: z.email().nonempty("Email cannot be empty"),
     password: z.string().nonempty("Password cannot be empty!"),
@@ -78,9 +82,17 @@ export function LoginForm({
     try {
       const response = await auth.post("/auth/login", values);
       toast.success(`Welcome ${response.data.email}`);
-      Cookies.set("Authorization", response.data.token, {
-        expires: new Date(response.data.expiration),
-      });
+      dispatch(
+        setAuth({
+          user: {
+            email: response.data.email,
+            firstName: response.data.firstName,
+            lastName: response.data.lastName,
+          } as User,
+          accessToken: response.data.accessToken,
+          expireAt: response.data.expiration,
+        }),
+      );
       router.push("/chat");
       await subscribeToPushNotification();
     } catch (error) {
