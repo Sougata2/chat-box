@@ -81,7 +81,9 @@ export function LoginForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const response = await auth.post("/auth/login", values);
-      toast.success(`Welcome ${response.data.email}`);
+      toast.success(
+        `Welcome ${response.data.firstName} ${response.data.lastName}`,
+      );
       dispatch(
         setAuth({
           user: {
