@@ -5,17 +5,12 @@ import { useCallback, useEffect, useRef } from "react";
 import { addRoom, updateLatestMessage } from "../store/roomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store/store";
-import { resetUser, setAuth } from "../store/userSlice";
 import { toastError } from "@/components/toastError";
-import { useRouter } from "next/navigation";
 import { Message } from "../types/room";
-import { auth } from "../clients/authClient";
-import { User } from "../types/user";
 
 import React from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const eventSourceRef = useRef<EventSource | null>(null);
   const receiveAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -131,41 +126,8 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     disconnect();
-    if (!accessToken) connect();
+    if (accessToken) connect();
   }, [accessToken, connect, disconnect]);
-
-  const restoreSession = useCallback(async () => {
-    try {
-      const response = await auth.post("/auth/refresh");
-
-      dispatch(
-        setAuth({
-          user: {
-            email: response.data.email,
-            firstName: response.data.firstName,
-            lastName: response.data.lastName,
-          } as User,
-          accessToken: response.data.accessToken,
-          expireAt: response.data.expiration,
-        }),
-      );
-    } catch (error) {
-      /**
-       * just for logging purpose.
-       * */
-      console.log(error);
-      dispatch(resetUser());
-      router.push("/sign-in");
-    }
-  }, [dispatch, router]);
-
-  useEffect(() => {
-    if (!accessToken) {
-      (async () => {
-        await restoreSession();
-      })();
-    }
-  }, [accessToken, restoreSession]);
 
   return <div className="bg-slate-100 h-screen">{children}</div>;
 }
