@@ -91,7 +91,7 @@ export function LoginForm({
             firstName: response.data.firstName,
             lastName: response.data.lastName,
           } as User,
-          accessToken: response.data.accessToken,
+          accessToken: response.data.token,
           expireAt: response.data.expiration,
         }),
       );
