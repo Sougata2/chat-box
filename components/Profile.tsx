@@ -22,20 +22,19 @@ import { resetRooms } from "@/app/store/roomSlice";
 import { resetChat } from "@/app/store/chatSlice";
 import { resetUser } from "@/app/store/userSlice";
 import { useRouter } from "next/navigation";
-
-import Cookies from "js-cookie";
+import { auth } from "@/app/clients/authClient";
 
 function Profile() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
 
-  function logout() {
+  async function logout() {
     try {
       dispatch(resetUser());
       dispatch(resetRooms());
       dispatch(resetChat());
-      Cookies.remove("Authorization");
+      await auth.post("/auth/logout");
       router.replace("/sign-in");
     } catch (error) {
       toastError(error);
