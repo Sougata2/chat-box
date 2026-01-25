@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { resetUser, setAuth } from "./store/userSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "./store/store";
+import { AuthLoader } from "@/components/AuthLoader";
 import { useRouter } from "next/navigation";
 import { auth } from "./clients/authClient";
 import { User } from "./types/user";
@@ -45,7 +46,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [restoreSession]);
 
-  if (!ready) return <div>...loading</div>;
+  if (!ready) return <AuthLoader ready={ready} />;
 
   return <>{children}</>;
 }
