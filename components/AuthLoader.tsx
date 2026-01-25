@@ -30,7 +30,7 @@ export function AuthLoader({ ready }: { ready: boolean }) {
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-slate-100">
       <div className="text-xl font-medium">Chat-Box</div>
 
-      <Progress value={progress} className="w-55" />
+      <Progress value={progress} className="w-55 h-1.5" />
     </div>
   );
 }
