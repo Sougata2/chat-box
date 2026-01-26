@@ -44,7 +44,7 @@ function Rooms() {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col">
+    <div className="h-full min-h-0 flex flex-col w-full max-w-full overflow-hidden">
       {isNewChatMenuOpen && <NewChatMenu closeNewChatMenu={closeNewChatMenu} />}
       {!isNewChatMenuOpen && (
         <div className="flex flex-col flex-1 min-h-0">
@@ -67,7 +67,7 @@ function Rooms() {
               />
             </div>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto border-t border-slate-300 p-2 scrollbar-hide">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-slate-300 p-2 scrollbar-hide max-w-full">
             {rooms.references
               .filter((r) => matchsSearch(rooms.rooms[r], query))
               .map((reference) => (

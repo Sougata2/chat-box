@@ -13,12 +13,12 @@ import { GroupAvatar } from "./GroupAvatar";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
 import { TbChecks } from "react-icons/tb";
+import { Textarea } from "./ui/textarea";
 import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
 import { FiClock } from "react-icons/fi";
 import { Button } from "./ui/button";
 import { format } from "date-fns";
-import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
 import { z } from "zod";
@@ -34,6 +34,8 @@ function Window() {
   const dispatch = useDispatch<AppDispatch>();
   const shouldPlaySendNoti = useRef(false);
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
 
@@ -92,6 +94,11 @@ function Window() {
         await chat.post("/messages/send", payload);
       }
       form.setValue("message", "");
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "48px";
+        }
+      });
     } catch (error) {
       toastError(error);
     }
@@ -145,9 +152,10 @@ function Window() {
               className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`inline-grid shrink-0 min-w-30 max-w-md rounded-lg border p-2 grid-cols-[1fr_auto] items-end gap-x-2 
-                  ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
-                  `}
+                className={`grid min-w-0 max-w-md rounded-lg border p-2 
+                  grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 
+                  wrap-anywhere [word-break:break-word] 
+                  ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}`}
               >
                 <div className="flex flex-col">
                   {!isMe && (
@@ -159,7 +167,9 @@ function Window() {
                       {msg.sender.firstName} {msg.sender.lastName}
                     </div>
                   )}
-                  <div className="wrap-break-word">{msg.message}</div>
+                  <div className="whitespace-pre-wrap max-w-full">
+                    {msg.message}
+                  </div>
 
                   <div className="flex justify-end h-2.5">
                     <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1 translate-x-2">
@@ -186,18 +196,36 @@ function Window() {
             <FormField
               control={form.control}
               name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      autoComplete="off"
-                      placeholder="Type a message"
-                      className="h-12 text-base! placeholder:font-medium border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const { ref, ...rest } = field;
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        ref={(el) => {
+                          ref(el);
+                          textareaRef.current = el;
+                        }}
+                        placeholder="Type a message"
+                        rows={1}
+                        className="mt-1 min-h-12! h-12 placeholder:text-base font-medium text-base! leading-relaxed! border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-hidden whitespace-pre-wrap wrap-anywhere"
+                        onInput={(e) => {
+                          const el = e.currentTarget;
+                          el.style.height = "48px";
+                          el.style.height = `${el.scrollHeight}px`;
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            form.handleSubmit(onSubmit)();
+                          }
+                        }}
+                        {...rest}
+                      />
+                    </FormControl>
+                  </FormItem>
+                );
+              }}
             />
             <Button variant="outline" className="w-14">
               <AiOutlineSend size={20} className="text-emerald-500" />
