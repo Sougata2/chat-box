@@ -192,7 +192,7 @@ function Window() {
 
       <Form {...form}>
         <form onSubmit={(e) => form.handleSubmit(onSubmit)(e)}>
-          <div className="bg-white rounded-lg border border-slate-300 grid grid-cols-[1fr_auto] gap-3.5 items-center px-4">
+          <div className="bg-white rounded-lg border border-slate-300 grid grid-cols-[1fr_auto] gap-3.5 items-baseline-last px-4">
             <FormField
               control={form.control}
               name="message"
