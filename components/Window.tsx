@@ -204,7 +204,7 @@ function Window() {
                           msg?.createdAt
                             ? new Date(msg?.createdAt)
                             : new Date(),
-                          "dd-MM hh:mm aaa",
+                          "hh:mm aaa",
                         )}
                         {!msg?.createdAt && <FiClock size={11} />}
                         {isMe && msg?.createdAt && (
