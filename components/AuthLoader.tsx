@@ -1,16 +1,24 @@
 "use client";
 
 import { Progress } from "@/components/ui/progress";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-export function AuthLoader({ ready }: { ready: boolean }) {
+export function AuthLoader({
+  ready,
+  onComplete,
+}: {
+  ready: boolean;
+  onComplete: () => void;
+}) {
   const [progress, setProgress] = useState(10);
 
   useEffect(() => {
-    if (ready) return;
     const timer = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 95) return prev; // stop near the end
+        if (prev >= 95) {
+          if (ready) return 100;
+          else return prev;
+        }
         return prev + 5;
       });
     }, 1);
@@ -19,12 +27,10 @@ export function AuthLoader({ ready }: { ready: boolean }) {
   }, [ready]);
 
   useEffect(() => {
-    if (ready) {
-      setTimeout(() => {
-        setProgress(100);
-      }, 0);
+    if (progress === 100) {
+      onComplete();
     }
-  }, [ready]);
+  }, [onComplete, progress]);
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-slate-100">

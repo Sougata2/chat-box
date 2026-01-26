@@ -15,6 +15,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [ready, setReady] = useState<boolean>(false);
+  const [showLoader, setShowLoader] = useState<boolean>(true);
 
   const restoreSession = useCallback(async () => {
     try {
@@ -46,7 +47,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [restoreSession]);
 
-  if (!ready) return <AuthLoader ready={ready} />;
+  if (showLoader) {
+    return <AuthLoader ready={ready} onComplete={() => setShowLoader(false)} />;
+  }
 
   return <>{children}</>;
 }
