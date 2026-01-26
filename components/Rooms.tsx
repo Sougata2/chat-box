@@ -67,7 +67,7 @@ function Rooms() {
               />
             </div>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-slate-300 p-2 scrollbar-hide max-w-full">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-slate-300 p-2 scrollbar-hide max-w-sm">
             {rooms.references
               .filter((r) => matchsSearch(rooms.rooms[r], query))
               .map((reference) => (

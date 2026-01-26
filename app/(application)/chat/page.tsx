@@ -50,7 +50,7 @@ function Page() {
       <div className="bg-white border rounded-2xl border-slate-300">
         <Profile />
       </div>
-      <div className="bg-white border rounded-2xl border-slate-300 min-h-0 pb-3 max-w-md">
+      <div className="bg-white border rounded-2xl border-slate-300 min-h-0 pb-3">
         <Rooms />
       </div>
       <div className="rounded-2xl min-h-0">{isRoomSelected && <Window />}</div>
