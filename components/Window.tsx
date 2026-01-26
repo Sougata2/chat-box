@@ -77,7 +77,7 @@ function Window() {
     try {
       const payload = {
         ...values,
-        uuid: user?.id + Number(new Date()).toString(),
+        uuid: crypto.randomUUID(),
         sender: {
           email: user?.email,
         },
@@ -208,7 +208,7 @@ function Window() {
                         }}
                         placeholder="Type a message"
                         rows={1}
-                        className="mt-1 min-h-12! h-12 placeholder:text-base font-medium text-base! leading-relaxed! border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-hidden whitespace-pre-wrap wrap-anywhere"
+                        className="mt-1 min-h-12! h-12 placeholder:font-medium text-base! leading-relaxed! border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-hidden whitespace-pre-wrap wrap-anywhere"
                         onInput={(e) => {
                           const el = e.currentTarget;
                           el.style.height = "48px";
