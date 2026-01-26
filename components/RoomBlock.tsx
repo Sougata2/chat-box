@@ -17,7 +17,7 @@ function RoomBlock({
   );
 
   return (
-    <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer overflow-hidden max-w-full">
+    <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer overflow-hidden max-w-sm">
       {room?.groupName && <GroupAvatar />}
       {!room?.groupName && (
         <Avatar className="h-10 w-10">
