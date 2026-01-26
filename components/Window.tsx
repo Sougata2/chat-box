@@ -143,44 +143,74 @@ function Window() {
       </div>
 
       <div className="min-h-0 overflow-y-auto scrollbar-hide flex flex-col-reverse gap-5 py-2.5 px-5">
-        {room?.uuids.map((uuid: string) => {
+        {room?.uuids.map((uuid: string, index: number) => {
           const msg = room.messages[uuid];
           const isMe = msg.sender.email === user?.email;
+
+          let showDateBar: boolean = false;
+
+          const currentUUID = room?.uuids[index];
+          const currentCreatedAt = room.messages[currentUUID].createdAt;
+          const currentDate = format(
+            new Date(currentCreatedAt ?? new Date()),
+            "dd-MM-yyy",
+          );
+
+          const previouseUUID =
+            room.uuids[index === room.uuids.length - 1 ? index : index + 1];
+          const previousCreatedAt = room.messages[previouseUUID].createdAt;
+          const previousDate = format(
+            new Date(previousCreatedAt ?? new Date()),
+            "dd-MM-yyy",
+          );
+
+          if (currentDate !== previousDate) {
+            showDateBar = true;
+          }
+
           return (
-            <div
-              key={msg.uuid}
-              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`grid min-w-0 max-w-md rounded-lg border p-2 
+            <div key={msg.uuid}>
+              {showDateBar && (
+                <div className="flex justify-center py-8">
+                  <div className="w-fit px-3 bg-white rounded-2xl shadow-md border border-slate-100">
+                    {currentDate}
+                  </div>
+                </div>
+              )}
+              <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`grid min-w-0 max-w-md rounded-lg border p-2 
                   grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 
                   wrap-anywhere [word-break:break-word] 
                   ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}`}
-              >
-                <div className="flex flex-col">
-                  {!isMe && (
-                    <div
-                      className={`text-xs font-semibold ${getNameColor(
-                        msg.sender.firstName.toLowerCase(),
-                      )} h-3 -translate-y-1 capitalize`}
-                    >
-                      {msg.sender.firstName} {msg.sender.lastName}
+                >
+                  <div className="flex flex-col">
+                    {!isMe && (
+                      <div
+                        className={`text-xs font-semibold ${getNameColor(
+                          msg.sender.firstName.toLowerCase(),
+                        )} h-3 -translate-y-1 capitalize`}
+                      >
+                        {msg.sender.firstName} {msg.sender.lastName}
+                      </div>
+                    )}
+                    <div className="whitespace-pre-wrap max-w-full">
+                      {msg.message}
                     </div>
-                  )}
-                  <div className="whitespace-pre-wrap max-w-full">
-                    {msg.message}
-                  </div>
 
-                  <div className="flex justify-end h-2.5">
-                    <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1 translate-x-2">
-                      {format(
-                        msg?.createdAt ? new Date(msg?.createdAt) : new Date(),
-                        "hh:mm aaa",
-                      )}
-                      {!msg?.createdAt && <FiClock size={11} />}
-                      {isMe && msg?.createdAt && (
-                        <TbChecks className="text-emerald-700" size={20} />
-                      )}
+                    <div className="flex justify-end h-2.5">
+                      <div className="flex items-center gap-1 text-[11px] text-slate-600 translate-y-1 translate-x-2">
+                        {format(
+                          msg?.createdAt
+                            ? new Date(msg?.createdAt)
+                            : new Date(),
+                          "dd-MM hh:mm aaa",
+                        )}
+                        {!msg?.createdAt && <FiClock size={11} />}
+                        {isMe && msg?.createdAt && (
+                          <TbChecks className="text-emerald-700" size={20} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
