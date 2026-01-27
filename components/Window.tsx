@@ -152,7 +152,7 @@ function Window() {
 
           const currentUUID = room?.uuids[index];
           const currentCreatedAt = room.messages[currentUUID].createdAt;
-          const currentDate = format(
+          let currentDate = format(
             new Date(currentCreatedAt ?? new Date()),
             "dd-MM-yyy",
           );
@@ -168,6 +168,11 @@ function Window() {
           if (currentDate !== previousDate) {
             showDateBar = true;
           }
+
+          currentDate =
+            currentDate === format(new Date(), "dd-MM-yyyy")
+              ? "Today"
+              : currentDate;
 
           return (
             <div key={msg.uuid}>
