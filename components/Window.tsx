@@ -22,7 +22,6 @@ import { Button } from "./ui/button";
 import { format } from "date-fns";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
-
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -240,11 +239,28 @@ function Window() {
                         }}
                         placeholder="Type a message"
                         rows={1}
-                        className="mt-1 min-h-12! h-12 placeholder:font-medium text-base! leading-relaxed! border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-hidden whitespace-pre-wrap wrap-anywhere"
+                        className="
+                            mt-1 
+                            min-h-12! 
+                            h-12 
+                            max-h-40
+                            overflow-y-scroll
+                            scrollbar-hide
+                            placeholder:font-medium 
+                            text-base! 
+                            leading-relaxed! 
+                            border-none 
+                            shadow-none 
+                            focus-visible:ring-0
+                            focus-visible:ring-offset-0 
+                            resize-none 
+                            whitespace-pre-wrap 
+                            wrap-anywhere
+                        "
                         onInput={(e) => {
                           const el = e.currentTarget;
                           el.style.height = "48px";
-                          el.style.height = `${el.scrollHeight}px`;
+                          el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
