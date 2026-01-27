@@ -23,7 +23,6 @@ import { format } from "date-fns";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
 import { z } from "zod";
-import { PlusIcon } from "lucide-react";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
