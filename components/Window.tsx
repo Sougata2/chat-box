@@ -9,6 +9,7 @@ import { updateLatestMessage } from "@/app/store/roomSlice";
 import { useEffect, useRef } from "react";
 import { AiOutlineSend } from "react-icons/ai";
 import { getNameColor } from "@/lib/utils";
+import { v4 as uuidv4 } from "uuid";
 import { GroupAvatar } from "./GroupAvatar";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
@@ -21,6 +22,7 @@ import { Button } from "./ui/button";
 import { format } from "date-fns";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
+
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -77,7 +79,7 @@ function Window() {
     try {
       const payload = {
         ...values,
-        uuid: crypto.randomUUID(),
+        uuid: uuidv4(),
         sender: {
           email: user?.email,
         },
