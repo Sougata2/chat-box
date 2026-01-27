@@ -178,7 +178,7 @@ function Window() {
             <div key={msg.uuid}>
               {showDateBar && (
                 <div className="flex justify-center py-8">
-                  <div className="w-fit px-3 bg-white rounded-2xl shadow-md border border-slate-100">
+                  <div className="w-fit font-bold text-slate-500 px-3 bg-white rounded-2xl shadow-md border border-slate-100">
                     {currentDate}
                   </div>
                 </div>
