@@ -3,14 +3,16 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect } from "react";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { getRoomStackSize } from "@/app/page";
+import { initializePages } from "@/app/store/pageSlice";
 import { toastError } from "@/components/toastError";
 import { setRooms } from "@/app/store/roomSlice";
 import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
 
+import PageRenderer from "@/components/PageRenderer";
 import Profile from "@/components/Profile";
 import Window from "@/components/Window";
-import Rooms from "@/components/Rooms";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
@@ -45,13 +47,19 @@ function Page() {
     })();
   }, [fetchRooms]);
 
+  useEffect(() => {
+    if (getRoomStackSize() === 0) {
+      dispatch(initializePages());
+    }
+  }, [dispatch]);
+
   return (
     <div className="grid grid-cols-[70px_6fr_15fr] h-screen gap-4 py-2 px-3">
       <div className="bg-white border rounded-2xl border-slate-300">
         <Profile />
       </div>
       <div className="bg-white border rounded-2xl border-slate-300 min-h-0 pb-3">
-        <Rooms />
+        <PageRenderer stack="rooms" />
       </div>
       <div className="rounded-2xl min-h-0">{isRoomSelected && <Window />}</div>
     </div>
