@@ -1,5 +1,10 @@
 "use client";
-
+import {
+  DropdownMenu,
+  DropdownMenuLabel,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { unShiftMessageOrRefreshPendingChat } from "@/app/store/chatSlice";
@@ -7,19 +12,23 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { updateLatestMessage } from "@/app/store/roomSlice";
 import { useEffect, useRef } from "react";
+import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
 import { getNameColor } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import { GroupAvatar } from "./GroupAvatar";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
+import { FaImages } from "react-icons/fa6";
 import { TbChecks } from "react-icons/tb";
 import { Textarea } from "./ui/textarea";
 import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
 import { FiClock } from "react-icons/fi";
 import { Button } from "./ui/button";
+import { FaPlus } from "react-icons/fa6";
 import { format } from "date-fns";
+import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 import { User } from "@/app/types/user";
 import { z } from "zod";
@@ -338,9 +347,86 @@ function Window() {
               px-3 pb-2
               bg-white
               rounded-2xl border border-slate-300
-              items-end gap-2
+              items-end gap-1
             "
           >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-lg"
+                  className="
+                    bg-white
+                    rounded-full
+                    shrink-0 self-end hover:bg-slate-200
+                    focus-visible:ring-0 focus-visible:ring-offset-0
+                  "
+                >
+                  <FaPlus
+                    size={20}
+                    className="
+                      text-slate-900
+                    "
+                  />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>
+                  <label
+                    htmlFor="document-upload"
+                    className="
+                        flex
+                        px-3 py-2
+                        text-sm text-slate-800
+                        rounded-md
+                        cursor-pointer
+                        items-center gap-2 hover:bg-slate-200
+                      "
+                  >
+                    <IoDocumentText
+                      className="
+                          w-4 h-4
+                        "
+                    />
+                    <span>Document</span>
+                  </label>
+                  <Input
+                    type="file"
+                    id="document-upload"
+                    className="
+                        hidden
+                      "
+                  />
+                </DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  <label
+                    htmlFor="image-upload"
+                    className="
+                        flex
+                        px-3 py-2
+                        text-sm text-slate-800
+                        rounded-md
+                        cursor-pointer
+                        items-center gap-2 hover:bg-slate-200
+                      "
+                  >
+                    <FaImages
+                      className="
+                          w-4 h-4
+                        "
+                    />
+                    <span>Image & Photos</span>
+                  </label>
+                  <Input
+                    type="file"
+                    id="image-upload"
+                    className="
+                        hidden
+                      "
+                  />
+                </DropdownMenuLabel>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* TEXTAREA WRAPPER */}
             <div
               className="
@@ -381,6 +467,7 @@ function Window() {
                               form.handleSubmit(onSubmit)();
                             }
                           }}
+                          {...rest}
                           className="
                             overflow-y-auto
                             min-h-11 max-h-40
@@ -390,7 +477,6 @@ function Window() {
                             resize-none shadow-none
                             focus-visible:ring-0 focus-visible:ring-offset-0 wrap-break-word placeholder:font-semibold placeholder:text-md
                           "
-                          {...rest}
                         />
                       </FormControl>
                     </FormItem>
@@ -399,7 +485,6 @@ function Window() {
               />
             </div>
 
-            {/* SEND BUTTON */}
             <Button
               type="submit"
               size="icon-lg"
