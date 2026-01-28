@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { RootState, store } from "./store/store";
 import { useSelector } from "react-redux";
-import { RootState } from "./store/store";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Page } from "./types/page";
 
 export default function Home() {
   const router = useRouter();
@@ -19,4 +20,20 @@ export default function Home() {
   }, [accessToken, router, user]);
 
   return null;
+}
+
+export function peekWindow(): Page | null {
+  return store.getState().page.window[0];
+}
+
+export function getWindowStackSize(): number {
+  return store.getState().page.window.length;
+}
+
+export function peekRoom(): Page | null {
+  return store.getState().page.rooms[0];
+}
+
+export function getRoomStackSize(): number {
+  return store.getState().page.rooms.length;
 }
