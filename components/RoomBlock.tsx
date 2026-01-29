@@ -49,7 +49,7 @@ function RoomBlock({
               <TbChecks size={16} className="shrink-0 text-slate-500" />
             )}
 
-            <span className="flex-1 min-w-0 truncate max-w-3xs">
+            <span className="flex-1 min-w-0 truncate">
               {(room.messages[room.uuids[0]]?.senderEmail ||
                 room.messages[room.uuids[0]]?.sender?.email) ===
               loggedInUser?.email
