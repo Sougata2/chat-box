@@ -51,7 +51,7 @@ const pageSlice = createSlice({
     },
     popPage(state, action: PayloadAction<PageLocator>) {
       const stack = action.payload.stack;
-      state[stack].pop();
+      state[stack].shift();
     },
     resetStack(state, action: PayloadAction<PageLocator>) {
       const stack = action.payload.stack;
