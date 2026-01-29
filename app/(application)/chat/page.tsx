@@ -1,23 +1,19 @@
 "use client";
 
-import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect } from "react";
-import { AppDispatch, RootState } from "@/app/store/store";
 import { getRoomStackSize } from "@/app/page";
 import { initializePages } from "@/app/store/pageSlice";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/app/store/store";
 import { toastError } from "@/components/toastError";
 import { setRooms } from "@/app/store/roomSlice";
 import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
 
 import PageRenderer from "@/components/PageRenderer";
-import Profile from "@/components/Profile";
-import Window from "@/components/Window";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
-  const isRoomSelected =
-    useSelector((state: RootState) => state.chat.room) !== null;
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -56,12 +52,14 @@ function Page() {
   return (
     <div className="grid grid-cols-[70px_6fr_15fr] h-screen gap-4 py-2 px-3">
       <div className="bg-white border rounded-2xl border-slate-300">
-        <Profile />
+        <PageRenderer stack="profile" />
       </div>
       <div className="bg-white border rounded-2xl border-slate-300 min-h-0 pb-3">
         <PageRenderer stack="rooms" />
       </div>
-      <div className="rounded-2xl min-h-0">{isRoomSelected && <Window />}</div>
+      <div className="rounded-2xl min-h-0">
+        <PageRenderer stack="window" />
+      </div>
     </div>
   );
 }
