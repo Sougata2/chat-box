@@ -2,7 +2,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
-import { FaArrowLeft } from "react-icons/fa6";
 import { MdGroupAdd } from "react-icons/md";
 import { toastError } from "./toastError";
 import { selectRoom } from "@/app/store/chatSlice";
@@ -14,7 +13,7 @@ import { Room } from "@/app/types/room";
 
 import NewGroupMemberSelector from "./NewGroupMemberSelector";
 
-function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
+function NewChatMenu() {
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
   const [contacts, setContacts] = useState<User[]>([]);
@@ -55,7 +54,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
     if (!loggedInUser?.email || !participant.email) return;
     try {
       const response = await chat.get(
-        `/rooms/find-and-get-room-opt/${participant.email}`
+        `/rooms/find-and-get-room-opt/${participant.email}`,
       );
       dispatch(selectRoom(response.data));
     } catch (error) {
@@ -88,16 +87,7 @@ function NewChatMenu({ closeNewChatMenu }: { closeNewChatMenu: () => void }) {
         />
       )}
       {!isNewGroupMemberSelectorWindowOpen && (
-        <div className="h-full flex flex-col min-h-0">
-          <div className="py-4 px-4 flex gap-5 items-center shrink-0">
-            <FaArrowLeft
-              size={20}
-              className="cursor-pointer"
-              onClick={closeNewChatMenu}
-            />
-            <div className="text-lg font-semibold">New Chat</div>
-          </div>
-
+        <div className="h-screen min-h-0 flex flex-col w-full max-w-full overflow-hidden">
           <div className="px-4 shrink-0">
             <Input
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
