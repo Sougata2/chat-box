@@ -30,8 +30,10 @@ const pageSlice = createSlice({
   name: "page",
   reducers: {
     initializePages(state) {
-      state.rooms.unshift(rooms);
-      state.profile.unshift(profile);
+      if (state.rooms.length === 0 && state.profile.length === 0) {
+        state.rooms.unshift(rooms);
+        state.profile.unshift(profile);
+      }
     },
     stackPage(state, action: PayloadAction<PageLocator>) {
       const stack = action.payload.stack;

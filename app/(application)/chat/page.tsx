@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { getRoomStackSize } from "@/app/page";
 import { initializePages } from "@/app/store/pageSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
@@ -44,9 +43,7 @@ function Page() {
   }, [fetchRooms]);
 
   useEffect(() => {
-    if (getRoomStackSize() === 0) {
-      dispatch(initializePages());
-    }
+    dispatch(initializePages());
   }, [dispatch]);
 
   return (
