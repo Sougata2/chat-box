@@ -1,15 +1,17 @@
-import { RootState } from "@/app/store/store";
 import { useSelector } from "react-redux";
+import { RootState } from "@/app/store/store";
 
+import Profile from "./Profile";
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
 
 const pageRegistry: Record<string, React.FC> = {
   room: Rooms,
   window: Window,
+  profile: Profile,
 };
 
-type StackKey = "rooms" | "window";
+export type StackKey = "rooms" | "window" | "profile";
 
 function PageRenderer({ stack }: { stack: StackKey }) {
   const pages = useSelector((state: RootState) => state.page[stack]);
