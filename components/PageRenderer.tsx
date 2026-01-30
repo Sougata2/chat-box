@@ -1,25 +1,36 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { FaArrowLeft, FaXmark } from "react-icons/fa6";
 import { PageLocator } from "@/app/types/page";
 import { popPage } from "@/app/store/pageSlice";
-import { FaXmark } from "react-icons/fa6";
 
+import NewGroupMemberSelector from "./NewGroupMemberSelector";
+import NewGroupForm from "./NewGroupForm";
 import NewChatMenu from "./NewChatMenu";
 import Profile from "./Profile";
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
 import React from "react";
 
-interface RegistryObject {
-  label: string | null;
-  component: React.FC;
-}
+type RegistryObject<P = any> = {
+  label?: string | null;
+  component: React.ComponentType<P>;
+};
 
 export const pageRegistry: Record<string, RegistryObject | React.FC> = {
   room: Rooms,
   window: Window,
   profile: Profile,
   newChatMenu: { label: "New Chat", component: NewChatMenu },
+  newGroupMemberSelector: {
+    label: "Add Group Members",
+    component: NewGroupMemberSelector,
+  },
+  newGroupForm: {
+    label: "Create Group",
+    component: NewGroupForm,
+  },
 };
 
 export type StackKey = "rooms" | "window" | "profile";
@@ -49,11 +60,15 @@ function PageRenderer({ stack }: { stack: StackKey }) {
             dispatch(popPage({ stack } as PageLocator));
           }}
         >
-          {page.closeable && <FaXmark size={18} />}
+          {pages.length > 2 ? (
+            <>{page.closeable && <FaArrowLeft size={18} />}</>
+          ) : (
+            <>{page.closeable && <FaXmark size={18} />}</>
+          )}
         </div>
-        <div className="text-2xl font-medium">{Component.label}</div>
+        <div className="text-xl font-medium">{Component.label}</div>
       </div>
-      <Component.component />
+      <Component.component {...page.props} />
     </div>
   );
 }
