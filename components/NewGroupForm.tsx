@@ -9,8 +9,9 @@ import {
 } from "./ui/form";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { resetStack, stackPage } from "@/app/store/pageSlice";
+import { Page, PageLocator } from "@/app/types/page";
 import { v4 as uuidv4 } from "uuid";
-import { FaArrowLeft } from "react-icons/fa6";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
 import { selectRoom } from "@/app/store/chatSlice";
@@ -25,13 +26,7 @@ const formSchema = z.object({
   groupName: z.string().nonempty({ message: "Group Name cannot be empty" }),
 });
 
-function NewGroupForm({
-  selectedContacts,
-  closeWindow,
-}: {
-  selectedContacts: User[];
-  closeWindow: () => void;
-}) {
+function NewGroupForm({ selectedContacts }: { selectedContacts: User[] }) {
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -42,6 +37,8 @@ function NewGroupForm({
     },
   });
 
+  console.log(selectedContacts);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       if (!loggedInUser) return;
@@ -49,6 +46,18 @@ function NewGroupForm({
       participants.push({ email: loggedInUser?.email });
       const payload = { ...values, referenceNumber: uuidv4(), participants };
       const response = await chat.post("/rooms/new-group", payload);
+      dispatch(
+        resetStack({
+          stack: "rooms",
+          defaultPage: { name: "room", import: "@/component/Rooms" } as Page,
+        } as PageLocator),
+      );
+      dispatch(
+        stackPage({
+          stack: "window",
+          page: { name: "window", import: "@/components/Window" } as Page,
+        } as PageLocator),
+      );
       dispatch(selectRoom({ ...response.data, uuids: [], messages: {} }));
     } catch (error) {
       toastError(error);
@@ -57,14 +66,6 @@ function NewGroupForm({
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      <div className="py-4 px-4 flex gap-5 items-center shrink-0">
-        <FaArrowLeft
-          size={20}
-          className="cursor-pointer"
-          onClick={closeWindow}
-        />
-        <div className="text-lg font-semibold">New Group</div>
-      </div>
       <div className="container">
         <Form {...form}>
           <form
