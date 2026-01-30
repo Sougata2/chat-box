@@ -1,10 +1,11 @@
 import { StackKey } from "@/components/PageRenderer";
 
-export interface Page {
+export type Page = {
   name: string;
   import: string;
   closeable: boolean;
-}
+  props?: Record<string, unknown>;
+};
 
 export interface PageLocator {
   stack: StackKey;
