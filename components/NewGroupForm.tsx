@@ -37,8 +37,6 @@ function NewGroupForm({ selectedContacts }: { selectedContacts: User[] }) {
     },
   });
 
-  console.log(selectedContacts);
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       if (!loggedInUser) return;
