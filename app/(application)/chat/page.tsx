@@ -47,7 +47,7 @@ function Page() {
   }, [dispatch]);
 
   return (
-    <div className="grid grid-cols-[70px_minmax(100,430px)_1fr] h-screen gap-4 py-2 px-3">
+    <div className="grid grid-cols-[70px_minmax(100,28%)_1fr] h-screen gap-4 py-2 px-3">
       <div className="bg-white border rounded-2xl border-slate-300">
         <PageRenderer stack="profile" />
       </div>
