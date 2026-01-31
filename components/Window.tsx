@@ -373,33 +373,6 @@ function Window() {
               <DropdownMenuContent>
                 <DropdownMenuLabel>
                   <label
-                    htmlFor="document-upload"
-                    className="
-                        flex
-                        px-3 py-2
-                        text-sm text-slate-800
-                        rounded-md
-                        cursor-pointer
-                        items-center gap-2 hover:bg-slate-200
-                      "
-                  >
-                    <IoDocumentText
-                      className="
-                          w-4 h-4
-                        "
-                    />
-                    <span>Document</span>
-                  </label>
-                  <Input
-                    type="file"
-                    id="document-upload"
-                    className="
-                        hidden
-                      "
-                  />
-                </DropdownMenuLabel>
-                <DropdownMenuLabel>
-                  <label
                     htmlFor="image-upload"
                     className="
                         flex
@@ -420,6 +393,35 @@ function Window() {
                   <Input
                     type="file"
                     id="image-upload"
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.bmp"
+                    className="
+                        hidden
+                      "
+                  />
+                </DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  <label
+                    htmlFor="document-upload"
+                    className="
+                        flex
+                        px-3 py-2
+                        text-sm text-slate-800
+                        rounded-md
+                        cursor-pointer
+                        items-center gap-2 hover:bg-slate-200
+                      "
+                  >
+                    <IoDocumentText
+                      className="
+                          w-4 h-4
+                        "
+                    />
+                    <span>Document</span>
+                  </label>
+                  <Input
+                    type="file"
+                    id="document-upload"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.odt"
                     className="
                         hidden
                       "
