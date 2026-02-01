@@ -8,10 +8,12 @@ import { popPage } from "@/app/store/pageSlice";
 import NewGroupMemberSelector from "./NewGroupMemberSelector";
 import NewGroupForm from "./NewGroupForm";
 import NewChatMenu from "./NewChatMenu";
+import MediaUpload from "./MediaUpload";
 import Profile from "./Profile";
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
 import React from "react";
+import MediaChat from "./MediaChat";
 
 type RegistryObject<P = any> = {
   label?: string | null;
@@ -31,9 +33,11 @@ export const pageRegistry: Record<string, RegistryObject | React.FC> = {
     label: "Create Group",
     component: NewGroupForm,
   },
+  mediaUpload: MediaUpload,
+  mediaChat: MediaChat,
 };
 
-export type StackKey = "rooms" | "window" | "profile";
+export type StackKey = "rooms" | "window" | "profile" | "media";
 
 function PageRenderer({ stack }: { stack: StackKey }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -53,21 +57,27 @@ function PageRenderer({ stack }: { stack: StackKey }) {
 
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden">
-      <div className="flex gap-3.5 items-center px-4 py-4">
-        <div
-          className="translate-y-0.5 rounded-full p-1 hover:bg-slate-100"
-          onClick={() => {
-            dispatch(popPage({ stack } as PageLocator));
-          }}
-        >
-          {pages.length > 2 ? (
-            <>{page.closeable && <FaArrowLeft size={18} />}</>
-          ) : (
-            <>{page.closeable && <FaXmark size={18} />}</>
+      {page.closeable && (
+        <div className="flex gap-3.5 items-center px-4 py-4">
+          {page.closeable && (
+            <div
+              className="translate-y-0.5 rounded-full p-1 hover:bg-slate-100"
+              onClick={() => {
+                dispatch(popPage({ stack } as PageLocator));
+              }}
+            >
+              {pages.length > 2 ? (
+                <FaArrowLeft size={18} />
+              ) : (
+                <FaXmark size={18} />
+              )}
+            </div>
+          )}
+          {Component.label ?? (
+            <div className="text-xl font-medium">{Component.label}</div>
           )}
         </div>
-        <div className="text-xl font-medium">{Component.label}</div>
-      </div>
+      )}
       <Component.component {...page.props} />
     </div>
   );

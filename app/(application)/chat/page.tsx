@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { initializePages } from "@/app/store/pageSlice";
+import { MediaContext, MediaDispatchContext } from "@/app/contexts";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
 import { toastError } from "@/components/toastError";
@@ -13,6 +14,7 @@ import PageRenderer from "@/components/PageRenderer";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
+  const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -55,7 +57,11 @@ function Page() {
         <PageRenderer stack="rooms" />
       </div>
       <div className="rounded-2xl min-h-0">
-        <PageRenderer stack="window" />
+        <MediaDispatchContext.Provider value={setMediaFiles}>
+          <MediaContext.Provider value={mediaFiles}>
+            <PageRenderer stack="window" />
+          </MediaContext.Provider>
+        </MediaDispatchContext.Provider>
       </div>
     </div>
   );

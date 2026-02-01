@@ -5,12 +5,14 @@ export interface PageState {
   rooms: Page[];
   window: Page[];
   profile: Page[];
+  media: Page[];
 }
 
 const initialState: PageState = {
   rooms: [],
   window: [],
   profile: [],
+  media: [],
 };
 
 const rooms = {
