@@ -24,7 +24,7 @@ import Image from "next/image";
 type imageDimension = { width: number; height: number };
 
 const formSchema = z.object({
-  message: z.string().nonempty(),
+  message: z.string(),
   room: z.object({
     referenceNumber: z.string(),
   }),
@@ -86,21 +86,24 @@ function MediaUpload() {
         senderEmail: user?.email,
       } as Message;
 
-      dispatch(unShiftMessageOrRefreshPendingChat(payload));
-      dispatch(updateLatestMessage(payload));
+      // dispatch(unShiftMessageOrRefreshPendingChat(payload));
+      // dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
       if (room && !room?.id) {
         const newRoomPayload = { ...room, messages: [payload] };
-        await chat.post("/rooms/new-chat", newRoomPayload);
+        // await chat.post("/rooms/new-chat", newRoomPayload);
       } else {
-        await chat.post("/messages/send", payload);
+        // await chat.post("/messages/send", payload);
       }
+      console.log(payload);
+
       form.setValue("message", "");
       requestAnimationFrame(() => {
         if (textareaRef.current) {
           textareaRef.current.style.height = "44px";
         }
       });
+      dispatch(popPage({ stack: "media" } as PageLocator));
     } catch (error) {
       toastError(error);
     }
@@ -112,7 +115,7 @@ function MediaUpload() {
         flex flex-col
         bg-white
         border rounded-2xl border-slate-300
-        gap-3
+        justify-between
       "
     >
       <div
@@ -140,7 +143,8 @@ function MediaUpload() {
           className="
             flex
             w-full
-            justify-center items-center
+            justify-center
+            items-center
           "
         >
           {mediaUrls.map((url) => {
@@ -258,7 +262,7 @@ function MediaUpload() {
                 "
               >
                 <div className="flex gap-3.5 justify-between items-center">
-                  <div className="flex gap-2 min-w-3xl justify-center">
+                  <div className="flex gap-2 min-w-[80%] justify-center items-center">
                     {mediaUrls.map((url) => {
                       return (
                         <div
