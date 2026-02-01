@@ -112,7 +112,7 @@ function MediaUpload() {
         flex flex-col
         bg-white
         border rounded-2xl border-slate-300
-        gap-4
+        gap-3
       "
     >
       <div
