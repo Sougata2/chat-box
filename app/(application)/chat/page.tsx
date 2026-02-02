@@ -1,8 +1,8 @@
 "use client";
 
+import { MediaContext, MediaDispatchContext } from "@/app/contexts";
 import { useCallback, useEffect, useState } from "react";
 import { initializePages } from "@/app/store/pageSlice";
-import { MediaContext, MediaDispatchContext } from "@/app/contexts";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
 import { toastError } from "@/components/toastError";
