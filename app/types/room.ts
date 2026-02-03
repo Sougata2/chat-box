@@ -1,3 +1,4 @@
+import { Media } from "./media";
 import { User } from "./user";
 
 export interface Room {
@@ -18,6 +19,7 @@ export interface Message {
   message: string;
   sender: User;
   room: Room;
+  media: Media[];
   createdAt: Date | null;
   updatedAt: Date | null;
   senderEmail: string | null;

@@ -20,6 +20,7 @@ import { chat } from "@/app/clients/chatClient";
 import { z } from "zod";
 
 import Image from "next/image";
+import { PendingMedia } from "@/app/types/media";
 
 type imageDimension = { width: number; height: number };
 
@@ -41,7 +42,8 @@ function MediaUpload() {
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
 
-  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [dimensions, setDimension] = useState<Record<string, imageDimension>>(
     {},
   );
@@ -56,16 +58,32 @@ function MediaUpload() {
     },
   });
 
-  const makeMediaUrls = useCallback(() => {
-    if (!mediaFiles) return [];
-    setMediaUrls(Array.from(mediaFiles).map((m) => URL.createObjectURL(m)));
+  const initializePendingMedia = useCallback(() => {
+    if (!mediaFiles) return;
+
+    const list = Array.from(mediaFiles).map(
+      (file) =>
+        ({ file, previewUrl: URL.createObjectURL(file) }) as PendingMedia,
+    );
+    setPendingMedia(list);
+    return () => {
+      list.forEach((m) => URL.revokeObjectURL(m.previewUrl));
+    };
   }, [mediaFiles]);
 
   useEffect(() => {
+    if (room?.referenceNumber) {
+      form.setValue("room.referenceNumber", room.referenceNumber);
+    } else {
+      form.setValue("room.referenceNumber", "");
+    }
+  }, [form, room?.referenceNumber]);
+
+  useEffect(() => {
     (() => {
-      makeMediaUrls();
+      initializePendingMedia();
     })();
-  }, [makeMediaUrls]);
+  }, [initializePendingMedia]);
 
   useEffect(() => {
     if (sendAudioRef.current && shouldPlaySendNoti.current) {
@@ -75,8 +93,28 @@ function MediaUpload() {
     }
   }, [room?.uuids.length]);
 
+  async function uploadAllMedia(): Promise<PendingMedia[]> {
+    const formData = new FormData();
+    pendingMedia.forEach((m) => formData.append("files", m.file));
+    setIsUploading(true);
+
+    const response = await chat.post("/media/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    setIsUploading(false);
+    return pendingMedia.map((m, i) => ({
+      ...m,
+      uploaded: response.data[i],
+    }));
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      let uploadedMedia: PendingMedia[] = [];
+      if (pendingMedia.length > 0) {
+        uploadedMedia = await uploadAllMedia();
+      }
       const payload = {
         ...values,
         uuid: uuidv4(),
@@ -84,16 +122,17 @@ function MediaUpload() {
           email: user?.email,
         },
         senderEmail: user?.email,
+        media: uploadedMedia.map((m) => ({ id: m.uploaded.id })),
       } as Message;
 
-      // dispatch(unShiftMessageOrRefreshPendingChat(payload));
-      // dispatch(updateLatestMessage(payload));
+      dispatch(unShiftMessageOrRefreshPendingChat(payload));
+      dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
       if (room && !room?.id) {
         const newRoomPayload = { ...room, messages: [payload] };
         // await chat.post("/rooms/new-chat", newRoomPayload);
       } else {
-        // await chat.post("/messages/send", payload);
+        await chat.post("/media/send", payload);
       }
       console.log(payload);
 
@@ -148,11 +187,11 @@ function MediaUpload() {
             items-center
           "
         >
-          {mediaUrls.map((url) => {
-            const dim = dimensions[url];
+          {pendingMedia.map((pm) => {
+            const dim = dimensions[pm.previewUrl];
             return (
               <div
-                key={url}
+                key={pm.previewUrl}
                 style={
                   dim
                     ? { aspectRatio: `${dim.width} / ${dim.height}` }
@@ -161,13 +200,13 @@ function MediaUpload() {
               >
                 <Image
                   alt="Media"
-                  src={url}
+                  src={pm.previewUrl}
                   width={dim?.width ?? 200}
                   height={dim?.height ?? 200}
                   onLoadingComplete={(img) => {
                     setDimension((prev) => ({
                       ...prev,
-                      [url]: {
+                      [pm.previewUrl]: {
                         width: img.naturalWidth,
                         height: img.naturalHeight,
                       } as imageDimension,
@@ -264,13 +303,13 @@ function MediaUpload() {
               >
                 <div className="flex gap-3.5 justify-between items-center">
                   <div className="flex gap-2 min-w-[80%] justify-center items-center">
-                    {mediaUrls.map((url) => {
+                    {pendingMedia.map((pm) => {
                       return (
                         <div
-                          key={url}
+                          key={pm.previewUrl}
                           className="relative h-20 w-20 rounded-2xl overflow-auto border-3 border-emerald-600"
                         >
-                          <Image alt="Media" src={url} fill />
+                          <Image alt="Media" src={pm.previewUrl} fill />
                         </div>
                       );
                     })}
