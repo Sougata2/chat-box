@@ -106,6 +106,31 @@ function Layout({ children }: { children: React.ReactNode }) {
         }
       });
 
+      // TODO: CHANGE IT LATER ACCORDINGLY
+      es.addEventListener("MEDIA", (event) => {
+        if (!event.data) return;
+        let message: Message;
+        try {
+          message = JSON.parse(event.data) as Message;
+        } catch {
+          return;
+        }
+        dispatch(updateLatestMessage(message));
+        if (
+          message.room.referenceNumber === room?.referenceNumber ||
+          room?.messages[message.uuid]
+        ) {
+          dispatch(unShiftMessageOrRefreshPendingChat(message));
+        }
+
+        if ((message?.sender?.email || message.senderEmail) !== user?.email) {
+          if (receiveAudioRef.current) {
+            receiveAudioRef.current.currentTime = 0; // replay instantly
+            receiveAudioRef.current.play().catch(() => {});
+          }
+        }
+      });
+
       es.onerror = (error) => {
         console.log(error);
         // toast.error(`${error}`);
