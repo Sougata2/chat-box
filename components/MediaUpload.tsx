@@ -143,6 +143,7 @@ function MediaUpload() {
           className="
             flex
             w-full
+            px-3
             justify-center
             items-center
           "
@@ -174,7 +175,7 @@ function MediaUpload() {
                   }}
                   className="
                     object-contain
-                    max-h-80 h-auto w-full
+                    max-h-72 h-auto w-full
                     rounded-md border border-slate-200
                     shadow-md
                   "
