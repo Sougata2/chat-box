@@ -144,9 +144,7 @@ function MediaChat() {
   return (
     <div
       className="
-        grid grid-rows-[auto_1fr]
-        h-full min-h-0
-        gap-2
+        grid grid-rows-[1fr_auto] h-full min-h-0 gap-2
       "
     >
       <div
