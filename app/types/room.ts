@@ -13,12 +13,15 @@ export interface Room {
   updatedAt: Date | null;
 }
 
+type messageType = "MESSAGE" | "MEDIA";
+
 export interface Message {
   id: number | null;
   uuid: string;
   message: string;
   sender: User;
   room: Room;
+  type: messageType;
   media: Media[];
   createdAt: Date | null;
   updatedAt: Date | null;

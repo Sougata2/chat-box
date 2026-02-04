@@ -90,6 +90,7 @@ function MediaChat() {
         sender: {
           email: user?.email,
         },
+        type: "MESSAGE",
         senderEmail: user?.email,
       } as Message;
 
@@ -187,6 +188,7 @@ function MediaChat() {
 
           return (
             <div key={msg.uuid}>
+              {/* DATE-BAR */}
               {showDateBar && (
                 <div
                   className="
@@ -209,6 +211,7 @@ function MediaChat() {
                   </div>
                 </div>
               )}
+              {/* MESSAGE-BLOCK */}
               <div
                 className={`
                   flex
