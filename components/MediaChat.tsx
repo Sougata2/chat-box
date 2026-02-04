@@ -16,16 +16,13 @@ import { Page, PageLocator } from "@/app/types/page";
 import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
 import { v4 as uuidv4 } from "uuid";
-import { getNameColor } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
 import { stackPage } from "@/app/store/pageSlice";
 import { FaImages } from "react-icons/fa6";
-import { TbChecks } from "react-icons/tb";
 import { Textarea } from "./ui/textarea";
 import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
-import { FiClock } from "react-icons/fi";
 import { Button } from "./ui/button";
 import { FaPlus } from "react-icons/fa6";
 import { format } from "date-fns";
@@ -33,6 +30,9 @@ import { Input } from "./ui/input";
 import { toast } from "sonner";
 import { chat } from "@/app/clients/chatClient";
 import { z } from "zod";
+
+import MessageBubble from "./ChatBubble";
+import MediaBubble from "./MediaBubble";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -212,82 +212,12 @@ function MediaChat() {
                 </div>
               )}
               {/* MESSAGE-BLOCK */}
-              <div
-                className={`
-                  flex
-                  ${isMe ? "justify-end" : "justify-start"}
-                `}
-              >
-                <div
-                  className={`
-                    grid grid-cols-[minmax(0,1fr)_auto]
-                    min-w-0 max-w-md
-                    p-2
-                    rounded-lg border
-                    items-end gap-x-2 wrap-anywhere [word-break:break-word]
-                    ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
-                  `}
-                >
-                  <div
-                    className="
-                      flex flex-col
-                    "
-                  >
-                    {!isMe && (
-                      <div
-                        className={`
-                          h-3
-                          text-xs font-semibold
-                          -translate-y-1 capitalize
-                          ${getNameColor(msg.sender.firstName.toLowerCase())}
-                        `}
-                      >
-                        {msg.sender.firstName} {msg.sender.lastName}
-                      </div>
-                    )}
-                    <div
-                      className="
-                        max-w-full
-                        whitespace-pre-wrap
-                      "
-                    >
-                      {msg.message}
-                    </div>
-
-                    <div
-                      className="
-                        flex
-                        h-2.5
-                        justify-end
-                      "
-                    >
-                      <div
-                        className="
-                          flex
-                          text-[11px] text-slate-600
-                          items-center gap-1 translate-y-1 translate-x-2
-                        "
-                      >
-                        {format(
-                          msg?.createdAt
-                            ? new Date(msg?.createdAt)
-                            : new Date(),
-                          "hh:mm aaa",
-                        )}
-                        {!msg?.createdAt && <FiClock size={11} />}
-                        {isMe && msg?.createdAt && (
-                          <TbChecks
-                            size={20}
-                            className="
-                              text-emerald-700
-                            "
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {msg.type === "MESSAGE" && (
+                <MessageBubble isMe={isMe} msg={msg} />
+              )}
+              {msg.type === "MEDIA" && (
+                <MediaBubble isMe={isMe} media={msg.media} msg={msg} />
+              )}
             </div>
           );
         })}

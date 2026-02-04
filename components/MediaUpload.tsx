@@ -131,7 +131,7 @@ function MediaUpload() {
       shouldPlaySendNoti.current = true;
       if (room && !room?.id) {
         const newRoomPayload = { ...room, messages: [payload] };
-        // await chat.post("/rooms/new-chat", newRoomPayload);
+        await chat.post("/rooms/new-chat", newRoomPayload);
       } else {
         await chat.post("/media/send", payload);
       }
