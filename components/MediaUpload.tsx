@@ -121,6 +121,7 @@ function MediaUpload() {
         sender: {
           email: user?.email,
         },
+        type: "MEDIA",
         senderEmail: user?.email,
         media: uploadedMedia.map((m) => ({ id: m.uploaded.id })),
       } as Message;
