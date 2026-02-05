@@ -7,6 +7,7 @@ import { updateLatestMessage } from "@/app/store/roomSlice";
 import { AiOutlineSend } from "react-icons/ai";
 import { MediaContext } from "@/app/contexts";
 import { v4 as uuidv4 } from "uuid";
+import { PendingMedia } from "@/app/types/media";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PageLocator } from "@/app/types/page";
 import { toastError } from "./toastError";
@@ -20,7 +21,6 @@ import { chat } from "@/app/clients/chatClient";
 import { z } from "zod";
 
 import Image from "next/image";
-import { PendingMedia } from "@/app/types/media";
 
 type imageDimension = { width: number; height: number };
 
