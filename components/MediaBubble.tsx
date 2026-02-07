@@ -1,7 +1,10 @@
 "use client";
 
-import { Media } from "@/app/types/media";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store/store";
 import { Message } from "@/app/types/room";
+import { Media } from "@/app/types/media";
+
 import Image from "next/image";
 
 const MAX_PREVIEW = 4;
@@ -15,8 +18,11 @@ function MediaBubble({
   media: Media[];
   isMe: boolean;
 }) {
+  const token = useSelector((state: RootState) => state.user.accessToken);
   const previewMedia = media.slice(0, MAX_PREVIEW);
   const remaining = media.length - MAX_PREVIEW;
+
+  console.log(msg);
 
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
@@ -27,14 +33,14 @@ function MediaBubble({
           return (
             <div
               key={m.id}
-              className="relative w-[120px] h-[120px] rounded-lg overflow-hidden"
+              className="relative w-30 h-30 rounded-lg overflow-hidden"
             >
               <Image
-                src="/user-image.png"
+                src={`${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service${m.url}?token=${token}`}
                 alt="media"
                 fill
-                sizes="120px"
                 className="object-cover"
+                unoptimized
               />
 
               {isLast && (
