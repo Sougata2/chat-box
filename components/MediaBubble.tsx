@@ -61,8 +61,8 @@ function MediaBubble({
       <div
         className={`
           grid grid-cols
-          p-1
           max-w-md
+          p-1
           rounded-lg border
           gap-1 wrap-anywhere [word-break:break-word]
           ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
@@ -83,7 +83,9 @@ function MediaBubble({
         )}
         <div
           className="
-            flex flex-col gap-1 w-full min-w-52
+            flex flex-col
+            w-full min-w-52
+            gap-1
           "
         >
           {previewMedia.map((m, index) => {
@@ -94,26 +96,33 @@ function MediaBubble({
                 <DialogTrigger asChild>
                   <div
                     className={`
-              relative
-              w-full
-              h-44
-              rounded-lg
-              overflow-hidden
-              border
-              cursor-pointer
-              ${isMe ? "border-emerald-400" : "border-slate-300"}
-            `}
+                      overflow-hidden
+                      w-full h-44
+                      rounded-lg border
+                      cursor-pointer
+                      relative
+                      ${isMe ? "border-emerald-400" : "border-slate-300"}
+                    `}
                   >
                     <Image
                       src={`${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service${m.url}?token=${token}`}
                       alt="media"
                       fill
                       unoptimized
-                      className="object-cover"
+                      className="
+                        object-cover
+                      "
                     />
 
                     {isLast && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xl font-semibold">
+                      <div
+                        className="
+                          flex
+                          text-white text-xl font-semibold
+                          bg-black/60
+                          absolute inset-0 items-center justify-center
+                        "
+                      >
                         +{remaining}
                       </div>
                     )}
@@ -190,9 +199,9 @@ function MediaBubble({
                   </DialogTitle>
                   <div
                     className="
-                    flex
-                    px-4 pb-6
-                    items-center justify-center
+                      flex
+                      px-4 pb-6
+                      items-center justify-center
                     "
                   >
                     <Image
@@ -202,10 +211,10 @@ function MediaBubble({
                       height={1600}
                       unoptimized
                       className="
-                      object-contain
-                      w-auto h-auto max-w-[92vw] max-h-[85vh]
-                      rounded-lg
-                      shadow-2xl
+                        object-contain
+                        w-auto h-auto max-w-[92vw] max-h-[85vh]
+                        rounded-lg
+                        shadow-2xl
                       "
                     />
                   </div>
@@ -217,8 +226,8 @@ function MediaBubble({
         {msg.message && (
           <div
             className="
-            px-1
-          "
+              px-1
+            "
           >
             {msg.message}
           </div>
