@@ -4,6 +4,7 @@ import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
 import { Room } from "@/app/types/room";
 import { User } from "@/app/types/user";
+import { MdOutlineImage } from "react-icons/md";
 
 function RoomBlock({
   room,
@@ -49,13 +50,22 @@ function RoomBlock({
               <TbChecks size={16} className="shrink-0 text-slate-500" />
             )}
 
-            <span className="flex-1 min-w-0 truncate">
-              {(room.messages[room.uuids[0]]?.senderEmail ||
-                room.messages[room.uuids[0]]?.sender?.email) ===
-              loggedInUser?.email
-                ? "You: "
-                : `${room.messages[room.uuids[0]]?.senderFirstName}: `}
-              {room.messages[room.uuids[0]]?.message}
+            <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap truncate flex items-center gap-1">
+              <span className="shrink-0">
+                {(room.messages[room.uuids[0]]?.senderEmail ||
+                  room.messages[room.uuids[0]]?.sender?.email) ===
+                loggedInUser?.email
+                  ? "You: "
+                  : `${room.messages[room.uuids[0]]?.senderFirstName}: `}
+              </span>
+
+              {room.messages[room.uuids[0]].type === "MEDIA" && (
+                <MdOutlineImage className="shrink-0 inline" size={17} />
+              )}
+
+              <span className="truncate">
+                {room.messages[room.uuids[0]]?.message}
+              </span>
             </span>
           </div>
         )}
