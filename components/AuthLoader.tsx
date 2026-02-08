@@ -28,7 +28,9 @@ export function AuthLoader({
 
   useEffect(() => {
     if (progress === 100) {
-      onComplete();
+      setTimeout(() => {
+        onComplete();
+      }, 500);
     }
   }, [onComplete, progress]);
 
