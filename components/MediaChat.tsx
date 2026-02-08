@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { unShiftMessageOrRefreshPendingChat } from "@/app/store/chatSlice";
-import { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { MediaDispatchContext } from "@/app/contexts";
@@ -140,6 +140,48 @@ function MediaChat() {
         } as Page,
       } as PageLocator),
     );
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const files: File[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // check for images
+      if (item.type.startsWith("image")) {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+
+      if (files.length === 0) return;
+
+      // stop image from being pasted as base64 text
+      e.preventDefault();
+
+      // convert to FileList-like structure
+      const dt = new DataTransfer();
+      files.forEach((f) => dt.items.add(f));
+
+      if (setMediaFiles) {
+        setMediaFiles(dt.files);
+      }
+
+      // open the Media upload.
+      dispatch(
+        stackPage({
+          stack: "media",
+          page: {
+            name: "mediaUpload",
+            closeable: true,
+            import: "@/components/MediaUpload",
+          } as Page,
+        } as PageLocator),
+      );
+    }
   }
 
   return (
@@ -354,6 +396,7 @@ function MediaChat() {
                               form.handleSubmit(onSubmit)();
                             }
                           }}
+                          onPaste={handlePaste}
                           {...rest}
                           className="
                             overflow-y-auto
