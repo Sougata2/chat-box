@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { unShiftMessageOrRefreshPendingChat } from "@/app/store/chatSlice";
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { MediaDispatchContext } from "@/app/contexts";
@@ -33,6 +33,8 @@ import { z } from "zod";
 
 import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
+import GifPicker from "./GifPicker";
+import { MdGifBox } from "react-icons/md";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -51,6 +53,8 @@ function MediaChat() {
 
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
+
+  const [gifOpen, setGifOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -183,6 +187,30 @@ function MediaChat() {
       );
     }
   }
+
+  const handleGifSend = async (file: File) => {
+    setGifOpen(false);
+
+    // 👇 SAME as image/video upload in your system
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const files = dt.files;
+
+    if (setMediaFiles) {
+      setMediaFiles(files); // your existing uploader
+    }
+    // open the Media upload.
+    dispatch(
+      stackPage({
+        stack: "media",
+        page: {
+          name: "mediaUpload",
+          closeable: true,
+          import: "@/components/MediaUpload",
+        } as Page,
+      } as PageLocator),
+    );
+  };
 
   return (
     <div
@@ -356,7 +384,17 @@ function MediaChat() {
                 </DropdownMenuLabel>
               </DropdownMenuContent>
             </DropdownMenu>
-            {/* TEXTAREA WRAPPER */}
+            <div className="relative flex items-center gap-2">
+              <button onClick={() => setGifOpen(!gifOpen)}>
+                <MdGifBox size={40} className="text-slate-400" />
+              </button>
+
+              {gifOpen && (
+                <div className="absolute bottom-14 left-0 z-50">
+                  <GifPicker onSelect={handleGifSend} />
+                </div>
+              )}
+            </div>
             <div
               className="
                 flex-1 flex
