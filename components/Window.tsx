@@ -10,12 +10,14 @@ import { useEffect } from "react";
 import { User } from "@/app/types/user";
 
 import PageRenderer from "./PageRenderer";
+import { format } from "date-fns";
 
 function Window() {
   const dispatch = useDispatch<AppDispatch>();
 
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
+  const { presenceMap } = useSelector((state: RootState) => state.presence);
 
   const otherParticipant = room?.participants.find(
     (u: User) => u.email !== user?.email,
@@ -103,10 +105,19 @@ function Window() {
           {!room?.groupName && (
             <span
               className="
-                text-xs text-slate-500
+                text-xs text-slate-500 lowercase
               "
             >
-              online
+              {presenceMap[otherParticipant?.email ?? ""].status ===
+                "ONLINE" && <span className="text-emerald-500">● </span>}
+              {presenceMap[otherParticipant?.email ?? ""].status === "OFFLINE"
+                ? `last seen • ${format(
+                    new Date(
+                      presenceMap[otherParticipant?.email ?? ""].lastSeen,
+                    ),
+                    "hh:mm aaa (dd-MM-yy)",
+                  )}`
+                : presenceMap[otherParticipant?.email ?? ""].status}
             </span>
           )}
         </div>

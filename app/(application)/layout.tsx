@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  registerPresence,
+  presencePayload,
+  updatePresence,
+  PresenceDto,
+} from "../store/presenceSlice";
 import { unShiftMessageOrRefreshPendingChat } from "../store/chatSlice";
 import { useCallback, useEffect, useRef } from "react";
 import { addRoom, updateLatestMessage } from "../store/roomSlice";
@@ -7,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store/store";
 import { toastError } from "@/components/toastError";
 import { Message } from "../types/room";
+import { chat } from "../clients/chatClient";
 
 import React from "react";
 
@@ -131,6 +138,14 @@ function Layout({ children }: { children: React.ReactNode }) {
         }
       });
 
+      es.addEventListener("PRESENCE", (event) => {
+        if (!event.data) return;
+
+        const { username, data } = JSON.parse(event.data);
+
+        dispatch(updatePresence({ username, data } as presencePayload));
+      });
+
       es.onerror = (error) => {
         console.log(error);
         // toast.error(`${error}`);
@@ -148,6 +163,22 @@ function Layout({ children }: { children: React.ReactNode }) {
     eventSourceRef.current?.close();
     eventSourceRef.current = null;
   }, []);
+
+  const fetchPresence = useCallback(async () => {
+    try {
+      const response = await chat.get("/users/presence");
+      const data = response.data as PresenceDto[];
+      dispatch(registerPresence(data));
+    } catch (error) {
+      toastError(error);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    (async () => {
+      await fetchPresence();
+    })();
+  }, [fetchPresence]);
 
   useEffect(() => {
     disconnect();
