@@ -16,6 +16,9 @@ const chatSlice = createSlice({
     selectRoom(state, action: PayloadAction<Room>) {
       state.room = action.payload;
     },
+    updateRoom(state, action: PayloadAction<Room>) {
+      state.room = action.payload;
+    },
     resetChat(state) {
       state.room = null;
     },
@@ -43,6 +46,10 @@ const chatSlice = createSlice({
   },
 });
 
-export const { selectRoom, resetChat, unShiftMessageOrRefreshPendingChat } =
-  chatSlice.actions;
+export const {
+  selectRoom,
+  updateRoom,
+  resetChat,
+  unShiftMessageOrRefreshPendingChat,
+} = chatSlice.actions;
 export default chatSlice.reducer;
