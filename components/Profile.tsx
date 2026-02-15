@@ -17,8 +17,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { LuMessageSquareText } from "react-icons/lu";
+import { PageLocator } from "@/app/types/page";
 import { toastError } from "./toastError";
 import { resetRooms } from "@/app/store/roomSlice";
+import { resetStack } from "@/app/store/pageSlice";
 import { resetChat } from "@/app/store/chatSlice";
 import { resetUser } from "@/app/store/userSlice";
 import { useRouter } from "next/navigation";
@@ -34,6 +36,7 @@ function Profile() {
       dispatch(resetUser());
       dispatch(resetRooms());
       dispatch(resetChat());
+      dispatch(resetStack({ stack: "window" } as PageLocator));
       await auth.post("/auth/logout");
       router.replace("/sign-in");
     } catch (error) {
