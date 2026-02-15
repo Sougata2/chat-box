@@ -1,11 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { ChangeEvent, useState } from "react";
+import { resetStack, stackPage } from "@/app/store/pageSlice";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { Page, PageLocator } from "@/app/types/page";
 import { selectRoom } from "@/app/store/chatSlice";
 import { toastError } from "./toastError";
-import { stackPage } from "@/app/store/pageSlice";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
@@ -40,6 +40,15 @@ function Rooms() {
             name: "window",
             import: "@/components/Window",
             closeable: false,
+          } as Page,
+        } as PageLocator),
+      );
+      dispatch(
+        resetStack({
+          stack: "media",
+          defaultPage: {
+            name: "mediaChat",
+            import: "@/components/MediaChat",
           } as Page,
         } as PageLocator),
       );
