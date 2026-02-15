@@ -8,6 +8,7 @@ export interface Room {
   groupName: string | null;
   participants: User[];
   uuids: string[];
+  mutedParticipants: string[];
   messages: Record<string, Message>;
   createdAt: Date | null;
   updatedAt: Date | null;
