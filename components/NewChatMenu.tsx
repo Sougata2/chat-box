@@ -57,6 +57,7 @@ function NewChatMenu() {
           participants: [{ ...loggedInUser }, { ...participant }],
           messages: {},
           uuids: [],
+          mutedParticipants: [],
           roomType: null,
           groupName: null,
           createdAt: null,
