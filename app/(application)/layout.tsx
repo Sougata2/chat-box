@@ -174,6 +174,25 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [dispatch]);
 
+  const handleVisibility = useCallback(async () => {
+    try {
+      const isVisible = document.visibilityState === "visible";
+      chat.post("/presence/visibility", { active: isVisible });
+    } catch (error) {
+      toastError(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      document.addEventListener("visibilitychange", handleVisibility);
+    })();
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [handleVisibility]);
+
   useEffect(() => {
     (async () => {
       await fetchPresence();
