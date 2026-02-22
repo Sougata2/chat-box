@@ -16,6 +16,9 @@ import { Message } from "../types/room";
 import { chat } from "../clients/chatClient";
 
 import React from "react";
+import { useChatSocket } from "@/hooks/useChatSocket";
+import { Client } from "@stomp/stompjs";
+import { Button } from "@/components/ui/button";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch<AppDispatch>();
@@ -25,186 +28,23 @@ function Layout({ children }: { children: React.ReactNode }) {
   const user = useSelector((state: RootState) => state.user.user);
   const { accessToken } = useSelector((state: RootState) => state.user);
 
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js");
-    }
-  }, []);
+  const socketRef = useChatSocket(accessToken);
 
-  useEffect(() => {
-    receiveAudioRef.current = new Audio("/received.mp3");
-  }, []);
+  const sendMessage = () => {
+    socketRef.current?.publish({
+      destination: "/app/send",
+      body: "HELLO",
+    });
+  };
 
-  const connect = useCallback(() => {
-    try {
-      if (eventSourceRef.current) return;
-
-      const es = new EventSource(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service/users/stream`,
-        {
-          withCredentials: true,
-        },
-      );
-
-      es.addEventListener("MESSAGE", (event) => {
-        if (!event.data) return;
-        let message: Message;
-        try {
-          message = JSON.parse(event.data) as Message;
-        } catch {
-          return;
-        }
-        dispatch(updateLatestMessage(message));
-        if (
-          message.room.referenceNumber === room?.referenceNumber ||
-          room?.messages[message.uuid]
-        ) {
-          dispatch(unShiftMessageOrRefreshPendingChat(message));
-        }
-
-        if ((message?.sender?.email || message.senderEmail) !== user?.email) {
-          if (receiveAudioRef.current) {
-            receiveAudioRef.current.currentTime = 0; // replay instantly
-            receiveAudioRef.current.play().catch(() => {});
-          }
-        }
-      });
-
-      es.addEventListener("NEW_CHAT", (event) => {
-        if (!event.data) return;
-        let message: Message;
-        try {
-          message = JSON.parse(event.data) as Message;
-        } catch {
-          return;
-        }
-        dispatch(updateLatestMessage(message));
-        const isSameRoomOpen =
-          (room?.referenceNumber === null || room?.referenceNumber === "") &&
-          room.participants.find((p) => p.email === message.senderEmail);
-
-        if (isSameRoomOpen) {
-          dispatch(unShiftMessageOrRefreshPendingChat(message));
-        }
-
-        if ((message?.sender?.email || message.senderEmail) !== user?.email) {
-          if (receiveAudioRef.current) {
-            receiveAudioRef.current.currentTime = 0; // replay instantly
-            receiveAudioRef.current.play().catch(() => {});
-          }
-        }
-        console.log("After => ", room);
-      });
-
-      es.addEventListener("ROOM", (event) => {
-        if (!event.data) return;
-        try {
-          const room = JSON.parse(event.data);
-          dispatch(
-            addRoom({
-              ...room,
-              uuids: room.uuids ? room.uuids : [],
-              messages: room.messages ? room.messages : {},
-            }),
-          );
-        } catch (error) {
-          console.log("Failed to parse created Room", error);
-          return;
-        }
-      });
-
-      // TODO: CHANGE IT LATER ACCORDINGLY
-      es.addEventListener("MEDIA", (event) => {
-        if (!event.data) return;
-        let message: Message;
-        try {
-          message = JSON.parse(event.data) as Message;
-        } catch {
-          return;
-        }
-        dispatch(updateLatestMessage(message));
-        if (
-          message.room.referenceNumber === room?.referenceNumber ||
-          room?.messages[message.uuid]
-        ) {
-          dispatch(unShiftMessageOrRefreshPendingChat(message));
-        }
-
-        if ((message?.sender?.email || message.senderEmail) !== user?.email) {
-          if (receiveAudioRef.current) {
-            receiveAudioRef.current.currentTime = 0; // replay instantly
-            receiveAudioRef.current.play().catch(() => {});
-          }
-        }
-      });
-
-      es.addEventListener("PRESENCE", (event) => {
-        if (!event.data) return;
-
-        const { username, data } = JSON.parse(event.data);
-
-        dispatch(updatePresence({ username, data } as presencePayload));
-      });
-
-      es.onerror = (error) => {
-        console.log(error);
-        // toast.error(`${error}`);
-        // es.close();
-        // eventSourceRef.current = null;
-      };
-
-      eventSourceRef.current = es;
-    } catch (error) {
-      toastError(error);
-    }
-  }, [dispatch, room, user]);
-
-  const disconnect = useCallback(() => {
-    eventSourceRef.current?.close();
-    eventSourceRef.current = null;
-  }, []);
-
-  const fetchPresence = useCallback(async () => {
-    try {
-      const response = await chat.get("/users/presence");
-      const data = response.data as PresenceDto[];
-      dispatch(registerPresence(data));
-    } catch (error) {
-      toastError(error);
-    }
-  }, [dispatch]);
-
-  const handleVisibility = useCallback(async () => {
-    try {
-      const isVisible = document.visibilityState === "visible";
-      chat.post("/presence/visibility", { active: isVisible });
-    } catch (error) {
-      toastError(error);
-    }
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      document.addEventListener("visibilitychange", handleVisibility);
-    })();
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [handleVisibility]);
-
-  useEffect(() => {
-    (async () => {
-      await fetchPresence();
-    })();
-  }, [fetchPresence]);
-
-  useEffect(() => {
-    disconnect();
-    if (accessToken) connect();
-  }, [accessToken, connect, disconnect]);
-
-  return <div className="bg-slate-100 h-screen">{children}</div>;
+  return (
+    <div className="bg-slate-100 h-screen">
+      {/* {children} */}
+      <div className="text-center">
+        <Button onClick={sendMessage}>Test</Button>
+      </div>
+    </div>
+  );
 }
 
 export default Layout;
