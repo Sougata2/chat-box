@@ -12,7 +12,7 @@ export function useChatSocket(token: string | null, csrfData: CsrfData) {
     if (!csrfData?.headerName) return;
     if (!csrfData?.token) return;
     const stompClient = new Client({
-      brokerURL: "ws://localhost:8080/ws/chat",
+      brokerURL: process.env.NEXT_PUBLIC_WEBSOCKET_URL,
       connectHeaders: {
         Authorization: `Bearer ${token}`,
         [csrfData.headerName]: csrfData.token,
