@@ -66,14 +66,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     });
   };
 
-  return (
-    <div className="bg-slate-100 h-screen">
-      {/* {children} */}
-      <div className="text-center">
-        <Button onClick={sendMessage}>Test</Button>
-      </div>
-    </div>
-  );
+  return <div className="bg-slate-100 h-screen">{children}</div>;
 }
 
 export default Layout;

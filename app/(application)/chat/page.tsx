@@ -7,10 +7,9 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
 import { toastError } from "@/components/toastError";
 import { setRooms } from "@/app/store/roomSlice";
-import { chat } from "@/app/clients/chatClient";
-import { Room } from "@/app/types/room";
 
 import PageRenderer from "@/components/PageRenderer";
+import { message } from "@/app/clients/messageClient";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
@@ -18,20 +17,21 @@ function Page() {
 
   const fetchRooms = useCallback(async () => {
     try {
-      const response = await chat.get("/rooms/subscribed-rooms");
+      const response = await message.get("/rooms/subscribed-rooms");
+      console.log(response.data);
 
-      response.data.references.forEach((ref: string) => {
-        response.data.rooms[ref] = {
-          ...response.data.rooms[ref],
-          uuids: response.data.rooms[ref].messages[0]
-            ? [response.data.rooms[ref].messages[0].uuid]
-            : [],
-          messages: {
-            [response.data.rooms[ref].messages[0]?.uuid]:
-              response.data.rooms[ref].messages[0],
-          },
-        } as Room;
-      });
+      // response.data.references.forEach((ref: string) => {
+      //   response.data.rooms[ref] = {
+      //     ...response.data.rooms[ref],
+      //     uuids: response.data.rooms[ref].messages[0]
+      //       ? [response.data.rooms[ref].messages[0].uuid]
+      //       : [],
+      //     messages: {
+      //       [response.data.rooms[ref].messages[0]?.uuid]:
+      //         response.data.rooms[ref].messages[0],
+      //     },
+      //   } as Room;
+      // });
       dispatch(setRooms(response.data));
     } catch (error) {
       toastError(error);

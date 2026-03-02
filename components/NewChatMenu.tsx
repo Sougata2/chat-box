@@ -8,10 +8,11 @@ import { toastError } from "./toastError";
 import { selectRoom } from "@/app/store/chatSlice";
 import { AxiosError } from "axios";
 import { stackPage } from "@/app/store/pageSlice";
+import { message } from "@/app/clients/messageClient";
 import { Input } from "./ui/input";
 import { User } from "@/app/types/user";
-import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
+import { auth } from "@/app/clients/authClient";
 
 function NewChatMenu() {
   const dispatch = useDispatch<AppDispatch>();
@@ -21,7 +22,7 @@ function NewChatMenu() {
 
   const fetchContacts = useCallback(async () => {
     try {
-      const response = await chat.get("/users/contacts");
+      const response = await auth.get("/users/all");
       setContacts(response.data);
     } catch (error) {
       toastError(error);
@@ -44,10 +45,13 @@ function NewChatMenu() {
   async function handleStartPrivateChat(participant: User) {
     if (!loggedInUser?.email || !participant.email) return;
     try {
-      const response = await chat.get(
-        `/rooms/find-and-get-room-opt/${participant.email}`,
+      const response = await message.get(
+        `/rooms/find-private-chat?participant=${participant.id}`,
       );
-      dispatch(selectRoom(response.data));
+
+      console.log(response.data);
+
+      // dispatch(selectRoom(response.data));
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.status === 404) {
