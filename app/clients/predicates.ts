@@ -1,8 +1,8 @@
 import { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { resetUser, setAuth } from "../store/userSlice";
 import { store } from "../store/store";
+import { User } from "@/types/types";
 import { auth } from "./authClient";
-import { User } from "../types/user";
 
 import axios from "axios";
 
@@ -56,13 +56,14 @@ export const responsePredicate = async (error: AxiosError) => {
     try {
       const response = await auth.post("/auth/refresh");
 
-      const { token, expiration, email, firstName, lastName } = response.data;
+      const { token, expiration, email, firstName, lastName, id } =
+        response.data;
 
       store.dispatch(
         setAuth({
           accessToken: token,
           expireAt: expiration,
-          user: { email, firstName, lastName } as User,
+          user: { id, email, firstName, lastName } as User,
         }),
       );
 

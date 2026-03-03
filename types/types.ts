@@ -22,8 +22,8 @@ export type Message = {
   uuid: string | null;
   status: Status | null;
   media: Media | null;
-  room: string | null;
-  createdAt: Room | null;
+  room: Room | null;
+  createdAt: string | null;
   updatedAt: string | null;
   senderId: number | null;
   senderEmail: string | null;
@@ -40,4 +40,14 @@ export type Room = {
   updatedAt: string | null;
   participants: number[] | null;
   lastMessage: Message | null;
+};
+
+export type RoomMap = {
+  uuids: string[];
+  rooms: Record<string, Room>;
+};
+
+export type MessageMap = {
+  uuids: string[];
+  messages: Record<string, Message>;
 };

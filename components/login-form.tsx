@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 
 import Link from "next/link";
-import { User } from "@/app/types/user";
+import { User } from "@/types/types";
 
 export function LoginForm({
   className,
@@ -87,6 +87,7 @@ export function LoginForm({
       dispatch(
         setAuth({
           user: {
+            id: response.data.id,
             email: response.data.email,
             firstName: response.data.firstName,
             lastName: response.data.lastName,

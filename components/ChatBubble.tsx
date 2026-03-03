@@ -1,8 +1,8 @@
 import { getNameColor } from "@/lib/utils";
 import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
-import { Message } from "@/app/types/room";
 import { format } from "date-fns";
+import { Message } from "@/types/types";
 
 function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
   return (
@@ -33,10 +33,10 @@ function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
                 h-3
                 text-xs font-semibold
                 -translate-y-1 capitalize
-                ${getNameColor(msg.sender.firstName.toLowerCase())}
+                ${getNameColor(msg.senderFirstName?.toLowerCase())}
               `}
             >
-              {msg.sender.firstName} {msg.sender.lastName}
+              {msg.senderFirstName} {msg.senderLastName}
             </div>
           )}
           <div

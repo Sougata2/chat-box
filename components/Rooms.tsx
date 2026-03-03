@@ -4,7 +4,6 @@ import { ChangeEvent, useState } from "react";
 import { resetStack, stackPage } from "@/app/store/pageSlice";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { Page, PageLocator } from "@/app/types/page";
-import { selectRoom } from "@/app/store/chatSlice";
 import { toastError } from "./toastError";
 import { Input } from "./ui/input";
 import { chat } from "@/app/clients/chatClient";
@@ -29,33 +28,33 @@ function Rooms() {
     return text.toLowerCase().includes(query.toLowerCase());
   }
 
-  async function selectRoomHandler(reference: string) {
-    try {
-      const response = await chat.get(`/rooms/opt-room/${reference}`);
-      dispatch(selectRoom(response.data));
-      dispatch(
-        stackPage({
-          stack: "window",
-          page: {
-            name: "window",
-            import: "@/components/Window",
-            closeable: false,
-          } as Page,
-        } as PageLocator),
-      );
-      dispatch(
-        resetStack({
-          stack: "media",
-          defaultPage: {
-            name: "mediaChat",
-            import: "@/components/MediaChat",
-          } as Page,
-        } as PageLocator),
-      );
-    } catch (error) {
-      toastError(error);
-    }
-  }
+  // async function selectRoomHandler(reference: string) {
+  //   try {
+  //     const response = await chat.get(`/rooms/opt-room/${reference}`);
+  //     dispatch(selectRoom(response.data));
+  //     dispatch(
+  //       stackPage({
+  //         stack: "window",
+  //         page: {
+  //           name: "window",
+  //           import: "@/components/Window",
+  //           closeable: false,
+  //         } as Page,
+  //       } as PageLocator),
+  //     );
+  //     dispatch(
+  //       resetStack({
+  //         stack: "media",
+  //         defaultPage: {
+  //           name: "mediaChat",
+  //           import: "@/components/MediaChat",
+  //         } as Page,
+  //       } as PageLocator),
+  //     );
+  //   } catch (error) {
+  //     toastError(error);
+  //   }
+  // }
 
   return (
     <div className="h-full min-h-0 flex flex-col w-full max-w-full overflow-hidden">

@@ -1,43 +1,44 @@
 "use client";
 
-import {
-  DropdownMenuRadioGroup,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenu,
-} from "@/components/ui/dropdown-menu";
-import {
-  CalendarPlusIcon,
-  MoreVerticalIcon,
-  ListFilterIcon,
-  MailCheckIcon,
-  ArchiveIcon,
-  Trash2Icon,
-  BellOff,
-  TagIcon,
-  Bell,
-} from "lucide-react";
+// import {
+//   DropdownMenuRadioGroup,
+//   DropdownMenuSubContent,
+//   DropdownMenuSubTrigger,
+//   DropdownMenuRadioItem,
+//   DropdownMenuSeparator,
+//   DropdownMenuTrigger,
+//   DropdownMenuContent,
+//   DropdownMenuGroup,
+//   DropdownMenuItem,
+//   DropdownMenuSub,
+//   DropdownMenu,
+// } from "@/components/ui/dropdown-menu";
+// import {
+//   CalendarPlusIcon,
+//   MoreVerticalIcon,
+//   ListFilterIcon,
+//   MailCheckIcon,
+//   ArchiveIcon,
+//   Trash2Icon,
+//   BellOff,
+//   TagIcon,
+//   Bell,
+// } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { useCallback, useEffect, useState } from "react";
 import { Page, PageLocator } from "@/app/types/page";
+import { savePartipants } from "@/app/store/chatSlice";
 import { GroupAvatar } from "./GroupAvatar";
 import { toastError } from "./toastError";
-import { updateRoom } from "@/app/store/chatSlice";
 import { stackPage } from "@/app/store/pageSlice";
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { message } from "@/app/clients/messageClient";
+// import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { chat } from "@/app/clients/chatClient";
 import { Room } from "@/app/types/room";
-import { User } from "@/app/types/user";
+import { User } from "@/types/types";
 
 import PageRenderer from "./PageRenderer";
 
@@ -45,12 +46,46 @@ function Window() {
   const dispatch = useDispatch<AppDispatch>();
 
   const room = useSelector((state: RootState) => state.chat.room);
+  const participants = useSelector(
+    (state: RootState) => state.chat.participants,
+  );
   const user = useSelector((state: RootState) => state.user.user);
   const { presenceMap } = useSelector((state: RootState) => state.presence);
 
-  const otherParticipant = room?.participants.find(
-    (u: User) => u.email !== user?.email,
+  const [otherParticipant, setOtherParticipant] = useState<User>();
+
+  const fetchParticipants = useCallback(
+    async (reference: string) => {
+      try {
+        const response = await message.get(`/rooms/participants/${reference}`);
+        dispatch(savePartipants([...response.data] as User[]));
+        setOtherParticipant(response.data.find((d: User) => d.id !== user?.id));
+      } catch (error) {
+        toastError(error);
+      }
+    },
+    [dispatch, user?.id],
   );
+
+  /*
+    fetch other participant for new room
+    else 
+      fetch participant for existing room
+  */
+  useEffect(() => {
+    (async () => {
+      if (!room?.referenceNumber) {
+        if (!room?.participants?.[0]) return;
+        const response = await message.get(
+          `/users/get-participant/${room.participants[0]}`,
+        );
+        setOtherParticipant(response.data);
+        dispatch(savePartipants([response.data, user]));
+      } else {
+        await fetchParticipants(room.referenceNumber);
+      }
+    })();
+  }, [room, fetchParticipants, dispatch, user]);
 
   useEffect(() => {
     dispatch(
@@ -61,36 +96,36 @@ function Window() {
     );
   }, [dispatch]);
 
-  async function muteRoom() {
-    if (!user?.email) return;
-    if (!room?.mutedParticipants) return;
-    const mutedParticipants = [...room?.mutedParticipants];
-    if (mutedParticipants?.includes(user?.email)) return;
-    mutedParticipants?.push(user.email);
-    const updatedRoom = { ...room, mutedParticipants } as Room;
-    dispatch(updateRoom({ ...updatedRoom } as Room));
-    try {
-      chat.post(`/rooms/mute-room/${room.referenceNumber}`);
-    } catch (error) {
-      toastError(error);
-    }
-  }
+  // async function muteRoom() {
+  //   if (!user?.email) return;
+  //   if (!room?.mutedParticipants) return;
+  //   const mutedParticipants = [...room?.mutedParticipants];
+  //   if (mutedParticipants?.includes(user?.email)) return;
+  //   mutedParticipants?.push(user.email);
+  //   const updatedRoom = { ...room, mutedParticipants } as Room;
+  //   dispatch(updateRoom({ ...updatedRoom } as Room));
+  //   try {
+  //     chat.post(`/rooms/mute-room/${room.referenceNumber}`);
+  //   } catch (error) {
+  //     toastError(error);
+  //   }
+  // }
 
-  async function unmuteRoom() {
-    if (!user?.email) return;
-    if (!room?.mutedParticipants) return;
-    const mutedParticipants = [...room?.mutedParticipants];
-    const index = mutedParticipants?.indexOf(user.email);
-    console.log(index);
-    mutedParticipants?.splice(index, 1);
-    const updatedRoom = { ...room, mutedParticipants };
-    dispatch(updateRoom({ ...updatedRoom } as Room));
-    try {
-      chat.post(`/rooms/unmute-room/${room.referenceNumber}`);
-    } catch (error) {
-      toastError(error);
-    }
-  }
+  // async function unmuteRoom() {
+  //   if (!user?.email) return;
+  //   if (!room?.mutedParticipants) return;
+  //   const mutedParticipants = [...room?.mutedParticipants];
+  //   const index = mutedParticipants?.indexOf(user.email);
+  //   console.log(index);
+  //   mutedParticipants?.splice(index, 1);
+  //   const updatedRoom = { ...room, mutedParticipants };
+  //   dispatch(updateRoom({ ...updatedRoom } as Room));
+  //   try {
+  //     chat.post(`/rooms/unmute-room/${room.referenceNumber}`);
+  //   } catch (error) {
+  //     toastError(error);
+  //   }
+  // }
 
   return (
     <div
@@ -121,8 +156,8 @@ function Window() {
             >
               <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>
-                {otherParticipant?.firstName?.[0]}
-                {otherParticipant?.lastName?.[0]}
+                {otherParticipant?.firstName}
+                {otherParticipant?.lastName}
               </AvatarFallback>
             </Avatar>
           )}
@@ -158,7 +193,7 @@ function Window() {
                 text-xs text-slate-500
               "
               >
-                {room?.participants
+                {participants
                   .map((p) => `${p.firstName} ${p.lastName}`)
                   .join(", ")}
               </span>
@@ -184,7 +219,7 @@ function Window() {
             )}
           </div>
         </div>
-        <div>
+        {/* <div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -261,7 +296,7 @@ function Window() {
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </div> */}
       </div>
 
       <PageRenderer stack="media" />

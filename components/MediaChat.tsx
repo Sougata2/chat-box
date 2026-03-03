@@ -6,7 +6,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
-import { unShiftMessageOrRefreshPendingChat } from "@/app/store/chatSlice";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
@@ -21,7 +20,6 @@ import { toastError } from "./toastError";
 import { stackPage } from "@/app/store/pageSlice";
 import { FaImages } from "react-icons/fa6";
 import { Textarea } from "./ui/textarea";
-import { Message } from "@/app/types/room";
 import { useForm } from "react-hook-form";
 import { Button } from "./ui/button";
 import { FaPlus } from "react-icons/fa6";
@@ -35,6 +33,7 @@ import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import { MdGifBox } from "react-icons/md";
+import { Message } from "@/types/types";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -52,6 +51,7 @@ function MediaChat() {
   const shouldPlaySendNoti = useRef(false);
 
   const room = useSelector((state: RootState) => state.chat.room);
+  const messageMap = useSelector((state: RootState) => state.chat.messageMap);
   const user = useSelector((state: RootState) => state.user.user);
 
   const [gifOpen, setGifOpen] = useState(false);
@@ -78,28 +78,33 @@ function MediaChat() {
     sendAudioRef.current = new Audio("/sent.mp3");
   }, []);
 
-  useEffect(() => {
-    if (sendAudioRef.current && shouldPlaySendNoti.current) {
-      sendAudioRef.current.currentTime = 0; // replay instantly
-      sendAudioRef.current.play().catch(() => {});
-      shouldPlaySendNoti.current = false;
-    }
-  }, [room?.uuids.length]);
+  // useEffect(() => {
+  //   if (sendAudioRef.current && shouldPlaySendNoti.current) {
+  //     sendAudioRef.current.currentTime = 0; // replay instantly
+  //     sendAudioRef.current.play().catch(() => {});
+  //     shouldPlaySendNoti.current = false;
+  //   }
+  // }, [room?.uuids.length]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const payload = {
-        ...values,
+        id: null,
+        message: values.message,
         uuid: uuidv4(),
-        sender: {
-          email: user?.email,
-        },
-        type: "MESSAGE",
+        status: "NOT_SENT",
+        media: "TEXT",
+        room: { referenceNumber: room?.referenceNumber },
+        createdAt: null,
+        updatedAt: null,
+        senderId: user?.id,
         senderEmail: user?.email,
+        senderFirstName: user?.firstName,
+        senderLastName: user?.lastName,
       } as Message;
 
-      dispatch(unShiftMessageOrRefreshPendingChat(payload));
-      dispatch(updateLatestMessage(payload));
+      // dispatch(unShiftMessageOrRefreshPendingChat(payload));
+      // dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
       if (room && !room?.id) {
         const newRoomPayload = { ...room, messages: [payload] };
@@ -226,22 +231,25 @@ function MediaChat() {
           scrollbar-hide gap-5
         "
       >
-        {room?.uuids.map((uuid: string, index: number) => {
-          const msg = room.messages[uuid];
-          const isMe = msg.sender.email === user?.email;
+        {messageMap?.uuids.map((uuid: string, index: number) => {
+          const msg = messageMap.messages[uuid];
+          const isMe = msg.senderEmail === user?.email;
 
           let showDateBar: boolean = false;
 
-          const currentUUID = room?.uuids[index];
-          const currentCreatedAt = room.messages[currentUUID].createdAt;
+          const currentUUID = messageMap?.uuids[index];
+          const currentCreatedAt = messageMap.messages[currentUUID].createdAt;
           let currentDate = format(
             new Date(currentCreatedAt ?? new Date()),
             "dd-MM-yyyy",
           );
 
           const previouseUUID =
-            room.uuids[index === room.uuids.length - 1 ? index : index + 1];
-          const previousCreatedAt = room.messages[previouseUUID].createdAt;
+            messageMap.uuids[
+              index === messageMap.uuids.length - 1 ? index : index + 1
+            ];
+          const previousCreatedAt =
+            messageMap.messages[previouseUUID].createdAt;
           const previousDate = format(
             new Date(previousCreatedAt ?? new Date()),
             "dd-MM-yyyy",
@@ -282,19 +290,21 @@ function MediaChat() {
                 </div>
               )}
               {/* MESSAGE-BLOCK */}
-              {msg.type === "MESSAGE" && (
-                <MessageBubble isMe={isMe} msg={msg} />
-              )}
-              {msg.type === "MEDIA" && (
+              {msg.media === "TEXT" && <MessageBubble isMe={isMe} msg={msg} />}
+              {/* {msg.media === "IMAGE" && (
                 <MediaBubble isMe={isMe} media={msg.media} msg={msg} />
-              )}
+              )} */}
             </div>
           );
         })}
       </div>
 
       <Form {...form}>
-        <form onSubmit={(e) => form.handleSubmit(onSubmit)(e)}>
+        <form
+          onSubmit={(e) => {
+            // form.handleSubmit(onSubmit)(e)
+          }}
+        >
           <div
             className="
               flex
@@ -431,7 +441,7 @@ function MediaChat() {
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
-                              form.handleSubmit(onSubmit)();
+                              // form.handleSubmit(onSubmit)();
                             }
                           }}
                           onPaste={handlePaste}

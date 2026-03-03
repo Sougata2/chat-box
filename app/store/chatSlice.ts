@@ -1,55 +1,51 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Message, Room } from "../types/room";
+import { Message, MessageMap, Room, User } from "@/types/types";
 
 export interface chatState {
   room: Room | null;
+  participants: User[];
+  messageMap: MessageMap;
 }
 
 const initialState: chatState = {
   room: null,
+  participants: [],
+  messageMap: { uuids: [], messages: {} },
 };
 
 const chatSlice = createSlice({
   initialState,
   name: "chat",
   reducers: {
-    selectRoom(state, action: PayloadAction<Room>) {
+    saveRoom(state, action: PayloadAction<Room>) {
       state.room = action.payload;
     },
-    updateRoom(state, action: PayloadAction<Room>) {
-      state.room = action.payload;
+    savePartipants(state, action: PayloadAction<User[]>) {
+      state.participants = action.payload;
+    },
+    setMessage(state, action: PayloadAction<Message>) {
+      const uuid = action.payload.uuid;
+      if (!uuid) return;
+
+      state.messageMap.uuids.unshift(uuid);
+      state.messageMap.messages[uuid] = action.payload;
+    },
+    updateMessage(state, action: PayloadAction<Message>) {
+      const uuid = action.payload.uuid;
+      if (!uuid) return;
+      state.messageMap.messages[uuid] = action.payload;
     },
     resetChat(state) {
       state.room = null;
-    },
-    unShiftMessageOrRefreshPendingChat(state, action: PayloadAction<Message>) {
-      if (!state.room) return;
-      if (!state.room.uuids) state.room.uuids = [];
-      if (!state.room.messages) state.room.messages = {};
-
-      if (!state.room.id) {
-        state.room.id = action.payload.room.id;
-      }
-
-      if (!state.room.referenceNumber) {
-        state.room.referenceNumber = action.payload.room.referenceNumber;
-      }
-
-      const { uuid } = action.payload;
-
-      if (!state.room.messages[uuid]) {
-        state.room.uuids.unshift(uuid);
-      }
-
-      state.room.messages[uuid] = action.payload;
     },
   },
 });
 
 export const {
-  selectRoom,
-  updateRoom,
+  saveRoom,
   resetChat,
-  unShiftMessageOrRefreshPendingChat,
+  setMessage,
+  updateMessage,
+  savePartipants,
 } = chatSlice.actions;
 export default chatSlice.reducer;

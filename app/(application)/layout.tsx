@@ -6,7 +6,6 @@ import {
   updatePresence,
   PresenceDto,
 } from "../store/presenceSlice";
-import { unShiftMessageOrRefreshPendingChat } from "../store/chatSlice";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { addRoom, updateLatestMessage } from "../store/roomSlice";
 import { useDispatch, useSelector } from "react-redux";

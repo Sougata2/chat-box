@@ -14,7 +14,6 @@ import { Page, PageLocator } from "@/app/types/page";
 import { v4 as uuidv4 } from "uuid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
-import { selectRoom } from "@/app/store/chatSlice";
 import { MdCheck } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import { Input } from "./ui/input";
@@ -37,37 +36,37 @@ function NewGroupForm({ selectedContacts }: { selectedContacts: User[] }) {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      if (!loggedInUser) return;
-      const participants = selectedContacts.map((sc) => ({ email: sc.email }));
-      participants.push({ email: loggedInUser?.email });
-      const payload = { ...values, referenceNumber: uuidv4(), participants };
-      const response = await chat.post("/rooms/new-group", payload);
-      dispatch(
-        resetStack({
-          stack: "rooms",
-          defaultPage: { name: "room", import: "@/component/Rooms" } as Page,
-        } as PageLocator),
-      );
-      dispatch(
-        stackPage({
-          stack: "window",
-          page: { name: "window", import: "@/components/Window" } as Page,
-        } as PageLocator),
-      );
-      dispatch(selectRoom({ ...response.data, uuids: [], messages: {} }));
-    } catch (error) {
-      toastError(error);
-    }
-  }
+  // async function onSubmit(values: z.infer<typeof formSchema>) {
+  //   try {
+  //     if (!loggedInUser) return;
+  //     const participants = selectedContacts.map((sc) => ({ email: sc.email }));
+  //     participants.push({ email: loggedInUser?.email });
+  //     const payload = { ...values, referenceNumber: uuidv4(), participants };
+  //     const response = await chat.post("/rooms/new-group", payload);
+  //     dispatch(
+  //       resetStack({
+  //         stack: "rooms",
+  //         defaultPage: { name: "room", import: "@/component/Rooms" } as Page,
+  //       } as PageLocator),
+  //     );
+  //     dispatch(
+  //       stackPage({
+  //         stack: "window",
+  //         page: { name: "window", import: "@/components/Window" } as Page,
+  //       } as PageLocator),
+  //     );
+  //     dispatch(selectRoom({ ...response.data, uuids: [], messages: {} }));
+  //   } catch (error) {
+  //     toastError(error);
+  //   }
+  // }
 
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="container">
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            // onSubmit={form.handleSubmit(onSubmit)}
             className="flex flex-col gap-10"
           >
             <FormField

@@ -5,13 +5,12 @@ import { AppDispatch, RootState } from "@/app/store/store";
 import { Page, PageLocator } from "@/app/types/page";
 import { MdGroupAdd } from "react-icons/md";
 import { toastError } from "./toastError";
-import { selectRoom } from "@/app/store/chatSlice";
 import { AxiosError } from "axios";
-import { stackPage } from "@/app/store/pageSlice";
+import { Room, User } from "@/types/types";
+import { resetStack, stackPage } from "@/app/store/pageSlice";
+import { saveRoom } from "@/app/store/chatSlice";
 import { message } from "@/app/clients/messageClient";
 import { Input } from "./ui/input";
-import { User } from "@/app/types/user";
-import { Room } from "@/app/types/room";
 import { auth } from "@/app/clients/authClient";
 
 function NewChatMenu() {
@@ -55,19 +54,39 @@ function NewChatMenu() {
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.status === 404) {
+        if (!loggedInUser.id || !participant.id) return;
         const newRoom: Room = {
           id: null,
           referenceNumber: null,
-          participants: [{ ...loggedInUser }, { ...participant }],
-          messages: {},
-          uuids: [],
-          mutedParticipants: [],
-          roomType: null,
+          type: "PRIVATE",
           groupName: null,
+          participants: [participant.id],
+          lastMessage: null,
           createdAt: null,
           updatedAt: null,
         };
-        dispatch(selectRoom(newRoom));
+        dispatch(saveRoom(newRoom));
+
+        // render the chat window
+        dispatch(
+          stackPage({
+            stack: "window",
+            page: {
+              name: "window",
+              import: "@/components/Window",
+              closeable: false,
+            } as Page,
+          } as PageLocator),
+        );
+        dispatch(
+          resetStack({
+            stack: "media",
+            defaultPage: {
+              name: "mediaChat",
+              import: "@/components/MediaChat",
+            } as Page,
+          } as PageLocator),
+        );
         return;
       }
       toastError(error);
@@ -134,8 +153,8 @@ function NewChatMenu() {
                   <Avatar>
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback className="capitalize">
-                      {c.firstName[0]}
-                      {c.lastName[0]}
+                      {c.firstName?.[0]}
+                      {c.lastName?.[0]}
                     </AvatarFallback>
                   </Avatar>
 

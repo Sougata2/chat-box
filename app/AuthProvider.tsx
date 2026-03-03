@@ -7,7 +7,7 @@ import { AppDispatch } from "./store/store";
 import { AuthLoader } from "@/components/AuthLoader";
 import { useRouter } from "next/navigation";
 import { auth } from "./clients/authClient";
-import { User } from "./types/user";
+import { User } from "@/types/types";
 
 import React from "react";
 
@@ -24,6 +24,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch(
         setAuth({
           user: {
+            id: response.data.id,
             email: response.data.email,
             firstName: response.data.firstName,
             lastName: response.data.lastName,

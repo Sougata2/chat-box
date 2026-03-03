@@ -1,6 +1,5 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
-import { unShiftMessageOrRefreshPendingChat } from "@/app/store/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { updateLatestMessage } from "@/app/store/roomSlice";
@@ -85,13 +84,13 @@ function MediaUpload() {
     })();
   }, [initializePendingMedia]);
 
-  useEffect(() => {
-    if (sendAudioRef.current && shouldPlaySendNoti.current) {
-      sendAudioRef.current.currentTime = 0; // replay instantly
-      sendAudioRef.current.play().catch(() => {});
-      shouldPlaySendNoti.current = false;
-    }
-  }, [room?.uuids.length]);
+  // useEffect(() => {
+  //   if (sendAudioRef.current && shouldPlaySendNoti.current) {
+  //     sendAudioRef.current.currentTime = 0; // replay instantly
+  //     sendAudioRef.current.play().catch(() => {});
+  //     shouldPlaySendNoti.current = false;
+  //   }
+  // }, [room?.uuids.length]);
 
   async function uploadAllMedia(): Promise<PendingMedia[]> {
     const formData = new FormData();
@@ -109,45 +108,45 @@ function MediaUpload() {
     }));
   }
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      let uploadedMedia: PendingMedia[] = [];
-      if (pendingMedia.length > 0) {
-        uploadedMedia = await uploadAllMedia();
-      }
-      const payload = {
-        ...values,
-        uuid: uuidv4(),
-        sender: {
-          email: user?.email,
-        },
-        type: "MEDIA",
-        senderEmail: user?.email,
-        media: uploadedMedia.map((m) => ({ id: m.uploaded.id })),
-      } as Message;
+  // async function onSubmit(values: z.infer<typeof formSchema>) {
+  //   try {
+  //     let uploadedMedia: PendingMedia[] = [];
+  //     if (pendingMedia.length > 0) {
+  //       uploadedMedia = await uploadAllMedia();
+  //     }
+  //     const payload = {
+  //       ...values,
+  //       uuid: uuidv4(),
+  //       sender: {
+  //         email: user?.email,
+  //       },
+  //       type: "MEDIA",
+  //       senderEmail: user?.email,
+  //       media: uploadedMedia.map((m) => ({ id: m.uploaded.id })),
+  //     } as Message;
 
-      dispatch(unShiftMessageOrRefreshPendingChat(payload));
-      dispatch(updateLatestMessage(payload));
-      shouldPlaySendNoti.current = true;
-      if (room && !room?.id) {
-        const newRoomPayload = { ...room, messages: [payload] };
-        await chat.post("/rooms/new-chat", newRoomPayload);
-      } else {
-        await chat.post("/media/send", payload);
-      }
-      console.log(payload);
+  //     dispatch(unShiftMessageOrRefreshPendingChat(payload));
+  //     dispatch(updateLatestMessage(payload));
+  //     shouldPlaySendNoti.current = true;
+  //     if (room && !room?.id) {
+  //       const newRoomPayload = { ...room, messages: [payload] };
+  //       await chat.post("/rooms/new-chat", newRoomPayload);
+  //     } else {
+  //       await chat.post("/media/send", payload);
+  //     }
+  //     console.log(payload);
 
-      form.setValue("message", "");
-      requestAnimationFrame(() => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "44px";
-        }
-      });
-      dispatch(popPage({ stack: "media" } as PageLocator));
-    } catch (error) {
-      toastError(error);
-    }
-  }
+  //     form.setValue("message", "");
+  //     requestAnimationFrame(() => {
+  //       if (textareaRef.current) {
+  //         textareaRef.current.style.height = "44px";
+  //       }
+  //     });
+  //     dispatch(popPage({ stack: "media" } as PageLocator));
+  //   } catch (error) {
+  //     toastError(error);
+  //   }
+  // }
 
   return (
     <div
@@ -228,7 +227,7 @@ function MediaUpload() {
       <div>
         <Form {...form}>
           <form
-            onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
+            // onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
             className="
               grid grid-rows-[1fr_1fr]
             "
@@ -273,7 +272,7 @@ function MediaUpload() {
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
-                              form.handleSubmit(onSubmit)();
+                              // form.handleSubmit(onSubmit)();
                             }
                           }}
                           className="
