@@ -147,8 +147,8 @@ function Window() {
           items-center gap-3
         "
         >
-          {room?.groupName && <GroupAvatar />}
-          {!room?.groupName && (
+          {room?.type === "GROUP" && <GroupAvatar />}
+          {room?.type === "PRIVATE" && (
             <Avatar
               className="
               h-10 w-10
@@ -167,27 +167,15 @@ function Window() {
             flex flex-col
           "
           >
-            {room?.groupName && (
-              <span
-                className="
+            <span
+              className="
                 text-slate-700 font-medium
                 capitalize
               "
-              >
-                {room?.groupName}
-              </span>
-            )}
-            {!room?.groupName && (
-              <span
-                className="
-                text-slate-700 font-medium
-                capitalize
-              "
-              >
-                {otherParticipant?.firstName} {otherParticipant?.lastName}
-              </span>
-            )}
-            {room?.groupName && (
+            >
+              {room?.name}
+            </span>
+            {room?.type === "GROUP" && (
               <span
                 className="
                 text-xs text-slate-500
@@ -198,7 +186,7 @@ function Window() {
                   .join(", ")}
               </span>
             )}
-            {!room?.groupName && (
+            {/* {!room?.groupName && (
               <span
                 className="
                 text-xs text-slate-500 lowercase
@@ -216,7 +204,7 @@ function Window() {
                     )}`
                   : presenceMap[otherParticipant?.email ?? ""]?.status}
               </span>
-            )}
+            )} */}
           </div>
         </div>
         {/* <div>

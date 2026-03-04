@@ -1,3 +1,5 @@
+import { Client } from "@stomp/stompjs";
+
 export type Status =
   | "DELIVERED"
   | "NOT_DELIVERED"
@@ -17,12 +19,11 @@ export type User = {
 export type Type = "PRIVATE" | "GROUP";
 
 export type Message = {
-  id: number | null;
   message: string | null;
   uuid: string | null;
   status: Status | null;
   media: Media | null;
-  room: Room | null;
+  roomRef: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   senderId: number | null;
@@ -32,10 +33,9 @@ export type Message = {
 };
 
 export type Room = {
-  id: number | null;
   referenceNumber: string | null;
   type: Type;
-  groupName: string | null;
+  name: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   participants: number[] | null;
@@ -50,4 +50,9 @@ export type RoomMap = {
 export type MessageMap = {
   uuids: string[];
   messages: Record<string, Message>;
+};
+
+export type WebSocketContextType = {
+  socket: React.RefObject<Client | null>;
+  sendPrivateMessage: (recipient: string, message: Message) => void;
 };

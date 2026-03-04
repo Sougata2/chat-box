@@ -10,7 +10,6 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { MediaDispatchContext } from "@/app/contexts";
-import { updateLatestMessage } from "@/app/store/roomSlice";
 import { Page, PageLocator } from "@/app/types/page";
 import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
@@ -26,14 +25,16 @@ import { FaPlus } from "react-icons/fa6";
 import { format } from "date-fns";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
-import { chat } from "@/app/clients/chatClient";
+import { useWebsocket } from "@/hooks/useWebsocket";
 import { z } from "zod";
 
 import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import { MdGifBox } from "react-icons/md";
-import { Message } from "@/types/types";
+import { Message, Room, User } from "@/types/types";
+import { message } from "@/app/clients/messageClient";
+import { saveRoom, setMessage } from "@/app/store/chatSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -45,12 +46,16 @@ const formSchema = z.object({
 function MediaChat() {
   const dispatch = useDispatch<AppDispatch>();
   const setMediaFiles = useContext(MediaDispatchContext);
+  const websocket = useWebsocket();
 
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldPlaySendNoti = useRef(false);
 
   const room = useSelector((state: RootState) => state.chat.room);
+  const participant = useSelector(
+    (state: RootState) => state.chat.participants,
+  );
   const messageMap = useSelector((state: RootState) => state.chat.messageMap);
   const user = useSelector((state: RootState) => state.user.user);
 
@@ -88,30 +93,62 @@ function MediaChat() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const payload = {
-        id: null,
+      let messagePayload = {
         message: values.message,
         uuid: uuidv4(),
         status: "NOT_SENT",
         media: "TEXT",
-        room: { referenceNumber: room?.referenceNumber },
-        createdAt: null,
-        updatedAt: null,
+        roomRef: room?.referenceNumber,
         senderId: user?.id,
         senderEmail: user?.email,
         senderFirstName: user?.firstName,
         senderLastName: user?.lastName,
       } as Message;
 
-      // dispatch(unShiftMessageOrRefreshPendingChat(payload));
-      // dispatch(updateLatestMessage(payload));
       shouldPlaySendNoti.current = true;
-      if (room && !room?.id) {
-        const newRoomPayload = { ...room, messages: [payload] };
-        await chat.post("/rooms/new-chat", newRoomPayload);
-      } else {
-        await chat.post("/messages/send", payload);
+      // find the participant
+      const recipient = participant.filter((p) => p.id !== user?.id)[0] as User;
+      if (room && !room?.referenceNumber) {
+        if (!recipient?.id || !user?.id) return;
+        // create a new room payload
+        const newRoom: Room = {
+          referenceNumber: uuidv4(),
+          name: `${recipient.firstName} ${recipient.lastName}`,
+          type: "PRIVATE",
+          participants: [recipient?.id],
+          lastMessage: null,
+          createdAt: null,
+          updatedAt: null,
+        };
+        // save the new room.
+        const newRoomResponse = await message.post(
+          "/rooms/new-private",
+          newRoom,
+        );
+        // update the current room
+        dispatch(saveRoom(newRoomResponse.data));
+        // prepare the messsage payload
+        messagePayload = {
+          message: values.message,
+          uuid: uuidv4(),
+          status: "NOT_SENT",
+          media: "TEXT",
+          roomRef: newRoomResponse.data.referenceNumber,
+          senderId: user?.id,
+          senderEmail: user?.email,
+          senderFirstName: user?.firstName,
+          senderLastName: user?.lastName,
+        } as Message;
       }
+      // put the message payload in the window
+      dispatch(setMessage(messagePayload));
+      console.log("Message Payload", messagePayload);
+
+      // send the message
+      if (!recipient.email) return;
+      websocket.sendPrivateMessage(recipient.email, messagePayload);
+      // update the message (in the socket)
+
       form.setValue("message", "");
       requestAnimationFrame(() => {
         if (textareaRef.current) {
@@ -300,11 +337,7 @@ function MediaChat() {
       </div>
 
       <Form {...form}>
-        <form
-          onSubmit={(e) => {
-            // form.handleSubmit(onSubmit)(e)
-          }}
-        >
+        <form onSubmit={(e) => form.handleSubmit(onSubmit)(e)}>
           <div
             className="
               flex
@@ -395,7 +428,7 @@ function MediaChat() {
               </DropdownMenuContent>
             </DropdownMenu>
             <div className="relative flex items-center gap-2">
-              <button onClick={() => setGifOpen(!gifOpen)}>
+              <button onClick={() => setGifOpen(!gifOpen)} type="button">
                 <MdGifBox size={40} className="text-slate-400" />
               </button>
 
@@ -441,7 +474,7 @@ function MediaChat() {
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
-                              // form.handleSubmit(onSubmit)();
+                              form.handleSubmit(onSubmit)();
                             }
                           }}
                           onPaste={handlePaste}

@@ -56,10 +56,9 @@ function NewChatMenu() {
       if (axiosError.status === 404) {
         if (!loggedInUser.id || !participant.id) return;
         const newRoom: Room = {
-          id: null,
           referenceNumber: null,
           type: "PRIVATE",
-          groupName: null,
+          name: `${participant.firstName} ${participant.lastName}`,
           participants: [participant.id],
           lastMessage: null,
           createdAt: null,
