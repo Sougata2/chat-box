@@ -23,6 +23,9 @@ const chatSlice = createSlice({
     savePartipants(state, action: PayloadAction<User[]>) {
       state.participants = action.payload;
     },
+    setMessages(state, action: PayloadAction<MessageMap>) {
+      state.messageMap = action.payload;
+    },
     setMessage(state, action: PayloadAction<Message>) {
       const uuid = action.payload.uuid;
       if (!uuid) return;
@@ -45,6 +48,7 @@ export const {
   saveRoom,
   resetChat,
   setMessage,
+  setMessages,
   updateMessage,
   savePartipants,
 } = chatSlice.actions;

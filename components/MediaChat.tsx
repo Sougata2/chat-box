@@ -1,40 +1,41 @@
 "use client";
 import {
-  DropdownMenu,
-  DropdownMenuLabel,
-  DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenu,
 } from "@/components/ui/dropdown-menu";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
-import React, { useContext, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { MediaDispatchContext } from "@/app/contexts";
+import { saveRoom, setMessage, setMessages } from "@/app/store/chatSlice";
+import { Message, Room, User } from "@/types/types";
 import { Page, PageLocator } from "@/app/types/page";
 import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
+import { useWebsocket } from "@/hooks/useWebsocket";
 import { v4 as uuidv4 } from "uuid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
 import { stackPage } from "@/app/store/pageSlice";
 import { FaImages } from "react-icons/fa6";
 import { Textarea } from "./ui/textarea";
+import { MdGifBox } from "react-icons/md";
+import { message } from "@/app/clients/messageClient";
 import { useForm } from "react-hook-form";
 import { Button } from "./ui/button";
 import { FaPlus } from "react-icons/fa6";
 import { format } from "date-fns";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
-import { useWebsocket } from "@/hooks/useWebsocket";
 import { z } from "zod";
 
 import MessageBubble from "./ChatBubble";
-import MediaBubble from "./MediaBubble";
+// import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
-import { MdGifBox } from "react-icons/md";
-import { Message, Room, User } from "@/types/types";
-import { message } from "@/app/clients/messageClient";
-import { saveRoom, setMessage } from "@/app/store/chatSlice";
+import React from "react";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -44,22 +45,39 @@ const formSchema = z.object({
 });
 
 function MediaChat() {
-  const dispatch = useDispatch<AppDispatch>();
   const setMediaFiles = useContext(MediaDispatchContext);
+  const dispatch = useDispatch<AppDispatch>();
   const websocket = useWebsocket();
 
-  const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const shouldPlaySendNoti = useRef(false);
 
-  const room = useSelector((state: RootState) => state.chat.room);
-  const participant = useSelector(
-    (state: RootState) => state.chat.participants,
+  const { messageMap, participants, room } = useSelector(
+    (state: RootState) => state.chat,
   );
-  const messageMap = useSelector((state: RootState) => state.chat.messageMap);
   const user = useSelector((state: RootState) => state.user.user);
 
   const [gifOpen, setGifOpen] = useState(false);
+
+  const fetchMessageMap = useCallback(async () => {
+    try {
+      const response = await message.get(
+        `/messages/room/${room?.referenceNumber}`,
+      );
+      dispatch(setMessages(response.data));
+    } catch (error) {
+      toastError(error);
+    }
+  }, [dispatch, room]);
+
+  useEffect(() => {
+    if (room?.referenceNumber) {
+      (async () => {
+        await fetchMessageMap();
+      })();
+    }
+  }, [fetchMessageMap, room?.referenceNumber]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,24 +90,16 @@ function MediaChat() {
   });
 
   useEffect(() => {
-    if (room?.referenceNumber) {
-      form.setValue("room.referenceNumber", room.referenceNumber);
-    } else {
-      form.setValue("room.referenceNumber", "");
-    }
-  }, [form, room?.referenceNumber]);
-
-  useEffect(() => {
     sendAudioRef.current = new Audio("/sent.mp3");
   }, []);
 
-  // useEffect(() => {
-  //   if (sendAudioRef.current && shouldPlaySendNoti.current) {
-  //     sendAudioRef.current.currentTime = 0; // replay instantly
-  //     sendAudioRef.current.play().catch(() => {});
-  //     shouldPlaySendNoti.current = false;
-  //   }
-  // }, [room?.uuids.length]);
+  useEffect(() => {
+    if (sendAudioRef.current && shouldPlaySendNoti.current) {
+      sendAudioRef.current.currentTime = 0; // replay instantly
+      sendAudioRef.current.play().catch(() => {});
+      shouldPlaySendNoti.current = false;
+    }
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -107,7 +117,7 @@ function MediaChat() {
 
       shouldPlaySendNoti.current = true;
       // find the participant
-      const recipient = participant.filter((p) => p.id !== user?.id)[0] as User;
+      const recipient = participants.find((p) => p.id !== user?.id) as User;
       if (room && !room?.referenceNumber) {
         if (!recipient?.id || !user?.id) return;
         // create a new room payload

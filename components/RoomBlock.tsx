@@ -1,10 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { MdOutlineImage } from "react-icons/md";
 import { GroupAvatar } from "./GroupAvatar";
+import { Room, User } from "@/types/types";
 import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
-import { Room } from "@/app/types/room";
-import { User } from "@/app/types/user";
-import { MdOutlineImage } from "react-icons/md";
 
 function RoomBlock({
   room,
@@ -13,62 +12,40 @@ function RoomBlock({
   room: Room;
   loggedInUser: User | null;
 }) {
-  const otherParticipant = room.participants.find(
-    (u: User) => u.email !== loggedInUser?.email,
-  );
-
   return (
     <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer overflow-hidden">
-      {room?.groupName && <GroupAvatar />}
-      {!room?.groupName && (
+      {room.type === "GROUP" && <GroupAvatar />}
+      {room.type === "PRIVATE" && (
         <Avatar className="h-10 w-10">
           <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>
-            {otherParticipant?.firstName?.[0]}
-            {otherParticipant?.lastName?.[0]}
-          </AvatarFallback>
+          <AvatarFallback>{room.name?.[0]}</AvatarFallback>
         </Avatar>
       )}
       <div className="flex flex-col flex-1 min-w-0">
-        {room.groupName && (
-          <div className="text-slate-700 font-medium capitalize">
-            {room.groupName}
-          </div>
-        )}
-        {!room.groupName && (
-          <div className="text-slate-700 font-medium capitalize">
-            {otherParticipant?.firstName} {otherParticipant?.lastName}
-          </div>
-        )}
-        {room.uuids.length > 0 && (
-          <div className="flex items-center gap-1 text-[13px] font-medium text-slate-500 min-w-0 overflow-hidden">
-            {!room.messages[room.uuids[0]]?.createdAt && (
-              <FiClock size={11} className="shrink-0" />
-            )}
+        <div className="text-slate-700 font-medium capitalize">{room.name}</div>
+        <div className="flex items-center gap-1 text-[13px] font-medium text-slate-500 min-w-0 overflow-hidden">
+          {room.lastMessage?.status === "NOT_SENT" && (
+            <FiClock size={11} className="shrink-0" />
+          )}
 
-            {room.messages[room.uuids[0]]?.createdAt && (
-              <TbChecks size={16} className="shrink-0 text-slate-500" />
-            )}
+          {room.lastMessage?.status === "SENT" && (
+            <TbChecks size={16} className="shrink-0 text-slate-500" />
+          )}
 
-            <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap truncate flex items-center gap-1">
-              <span className="shrink-0">
-                {(room.messages[room.uuids[0]]?.senderEmail ||
-                  room.messages[room.uuids[0]]?.sender?.email) ===
-                loggedInUser?.email
-                  ? "You: "
-                  : `${room.messages[room.uuids[0]]?.senderFirstName}: `}
-              </span>
-
-              {room.messages[room.uuids[0]].type === "MEDIA" && (
-                <MdOutlineImage className="shrink-0 inline" size={17} />
-              )}
-
-              <span className="truncate">
-                {room.messages[room.uuids[0]]?.message}
-              </span>
+          <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap truncate flex items-center gap-1">
+            <span className="shrink-0">
+              {room.lastMessage?.senderId === loggedInUser?.id
+                ? "You: "
+                : `${room.lastMessage?.senderFirstName}: `}
             </span>
-          </div>
-        )}
+
+            {room.lastMessage?.media === "IMAGE" && (
+              <MdOutlineImage className="shrink-0 inline" size={17} />
+            )}
+
+            <span className="truncate">{room.lastMessage?.message}</span>
+          </span>
+        </div>
       </div>
     </div>
   );

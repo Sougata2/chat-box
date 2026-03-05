@@ -5,9 +5,10 @@ import { resetStack, stackPage } from "@/app/store/pageSlice";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { Page, PageLocator } from "@/app/types/page";
 import { toastError } from "./toastError";
+import { saveRoom } from "@/app/store/chatSlice";
+import { message } from "@/app/clients/messageClient";
 import { Input } from "./ui/input";
-import { chat } from "@/app/clients/chatClient";
-import { Room } from "@/app/types/room";
+import { Room } from "@/types/types";
 
 import RoomBlock from "./RoomBlock";
 
@@ -20,41 +21,37 @@ function Rooms() {
 
   function matchsSearch(room: Room, query: string) {
     if (!query) return true;
-    const participantsString: string = room.participants
-      .filter((p) => p.email !== user?.email)
-      .map((p) => `${p.firstName} ${p.lastName}`)
-      .join(" ");
-    const text = `${room.groupName || ""} ${participantsString}`;
-    return text.toLowerCase().includes(query.toLowerCase());
+    if (!room.name) return;
+    return room.name.toLowerCase().includes(query.toLowerCase());
   }
 
-  // async function selectRoomHandler(reference: string) {
-  //   try {
-  //     const response = await chat.get(`/rooms/opt-room/${reference}`);
-  //     dispatch(selectRoom(response.data));
-  //     dispatch(
-  //       stackPage({
-  //         stack: "window",
-  //         page: {
-  //           name: "window",
-  //           import: "@/components/Window",
-  //           closeable: false,
-  //         } as Page,
-  //       } as PageLocator),
-  //     );
-  //     dispatch(
-  //       resetStack({
-  //         stack: "media",
-  //         defaultPage: {
-  //           name: "mediaChat",
-  //           import: "@/components/MediaChat",
-  //         } as Page,
-  //       } as PageLocator),
-  //     );
-  //   } catch (error) {
-  //     toastError(error);
-  //   }
-  // }
+  async function selectRoomHandler(reference: string) {
+    try {
+      const response = await message.get(`/rooms/reference/${reference}`);
+      dispatch(saveRoom(response.data));
+      dispatch(
+        stackPage({
+          stack: "window",
+          page: {
+            name: "window",
+            import: "@/components/Window",
+            closeable: false,
+          } as Page,
+        } as PageLocator),
+      );
+      dispatch(
+        resetStack({
+          stack: "media",
+          defaultPage: {
+            name: "mediaChat",
+            import: "@/components/MediaChat",
+          } as Page,
+        } as PageLocator),
+      );
+    } catch (error) {
+      toastError(error);
+    }
+  }
 
   return (
     <div className="h-full min-h-0 flex flex-col w-full max-w-full overflow-hidden">
@@ -93,13 +90,13 @@ function Rooms() {
           </div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-slate-300 p-2 scrollbar-hide max-w-full">
-          {/* {rooms.references
+          {rooms.uuids
             .filter((r) => matchsSearch(rooms.rooms[r], query))
             .map((reference) => (
               <div key={reference} onClick={() => selectRoomHandler(reference)}>
                 <RoomBlock loggedInUser={user} room={rooms.rooms[reference]} />
               </div>
-            ))} */}
+            ))}
         </div>
       </div>
     </div>

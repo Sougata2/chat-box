@@ -47,10 +47,7 @@ function NewChatMenu() {
       const response = await message.get(
         `/rooms/find-private-chat?participant=${participant.id}`,
       );
-
-      console.log(response.data);
-
-      // dispatch(selectRoom(response.data));
+      dispatch(saveRoom(response.data));
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.status === 404) {
@@ -65,30 +62,31 @@ function NewChatMenu() {
           updatedAt: null,
         };
         dispatch(saveRoom(newRoom));
-
-        // render the chat window
-        dispatch(
-          stackPage({
-            stack: "window",
-            page: {
-              name: "window",
-              import: "@/components/Window",
-              closeable: false,
-            } as Page,
-          } as PageLocator),
-        );
-        dispatch(
-          resetStack({
-            stack: "media",
-            defaultPage: {
-              name: "mediaChat",
-              import: "@/components/MediaChat",
-            } as Page,
-          } as PageLocator),
-        );
         return;
       }
       toastError(error);
+    } finally {
+      // render the chat window
+      dispatch(
+        stackPage({
+          stack: "window",
+          page: {
+            name: "window",
+            import: "@/components/Window",
+            closeable: false,
+          } as Page,
+        } as PageLocator),
+      );
+      dispatch(
+        resetStack({
+          stack: "media",
+          defaultPage: {
+            name: "mediaChat",
+            import: "@/components/MediaChat",
+          } as Page,
+        } as PageLocator),
+      );
+      return;
     }
   }
 

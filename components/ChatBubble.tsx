@@ -1,8 +1,8 @@
 import { getNameColor } from "@/lib/utils";
 import { TbChecks } from "react-icons/tb";
+import { Message } from "@/types/types";
 import { FiClock } from "react-icons/fi";
 import { format } from "date-fns";
-import { Message } from "@/types/types";
 
 function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
   return (
@@ -66,8 +66,8 @@ function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
                 msg?.createdAt ? new Date(msg?.createdAt) : new Date(),
                 "hh:mm aaa",
               )}
-              {!msg?.createdAt && <FiClock size={11} />}
-              {isMe && msg?.createdAt && (
+              {msg.status === "NOT_SENT" && <FiClock size={11} />}
+              {isMe && msg.status === "SENT" && (
                 <TbChecks
                   size={20}
                   className="

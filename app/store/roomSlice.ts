@@ -1,13 +1,13 @@
+import { Message, Room } from "@/types/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Message, Room } from "../types/room";
 
 export interface roomState {
-  references: string[];
+  uuids: string[];
   rooms: Record<string, Room>;
 }
 
 const initialState: roomState = {
-  references: [],
+  uuids: [],
   rooms: {},
 };
 
@@ -17,48 +17,47 @@ const roomSlice = createSlice({
   reducers: {
     setRooms(state, action: PayloadAction<roomState>) {
       state.rooms = action.payload.rooms;
-      state.references = action.payload.references;
+      state.uuids = action.payload.uuids;
     },
     resetRooms(state) {
       state.rooms = {};
-      state.references = [];
+      state.uuids = [];
     },
+    /**
+     * add new room to rooms array if not present.
+     * NOTE : Room will be added at first index.
+     */
     addRoom(state, action: PayloadAction<Room>) {
       const newRoom = action.payload;
       if (!newRoom.referenceNumber) return;
-      state.references = [newRoom.referenceNumber, ...state.references];
+      state.uuids = [newRoom.referenceNumber, ...state.uuids];
       state.rooms = {
         ...state.rooms,
         [newRoom.referenceNumber]: { ...newRoom },
       };
     },
-    updateLatestMessage(state, action: PayloadAction<Message>) {
-      const message: Message = action.payload;
-      const { referenceNumber } = message.room;
-      if (!referenceNumber) return;
-      if (!state.rooms[referenceNumber]) {
-        const newRoom: Room = {
-          ...message.room,
-          messages: { [message.uuid]: message },
-          uuids: [message.uuid],
-        };
-        state.references.unshift(referenceNumber);
-        state.rooms[referenceNumber] = newRoom;
-      } else {
-        state.rooms[referenceNumber] = {
-          ...state.rooms[referenceNumber],
-          ...message.room,
-          messages: { [message.uuid]: message },
-          uuids: [message.uuid],
-        };
-        const index = state.references.indexOf(referenceNumber);
-        state.references.splice(index, 1);
-        state.references.unshift(referenceNumber);
-      }
+    /**
+     * put the room at first index of the room.
+     * also update the latest message.
+     */
+    unShiftRoom(state, action: PayloadAction<Message>) {
+      const message = action.payload;
+      const uuids = [...state.uuids];
+
+      if (!message.roomRef) return;
+
+      const index = uuids.indexOf(message.roomRef);
+
+      if (!index) return;
+
+      uuids.splice(index, 1);
+
+      uuids.unshift(message.roomRef);
+
+      state.rooms[message.roomRef].lastMessage = action.payload;
     },
   },
 });
 
-export const { setRooms, addRoom, resetRooms, updateLatestMessage } =
-  roomSlice.actions;
+export const { setRooms, addRoom, resetRooms } = roomSlice.actions;
 export default roomSlice.reducer;
