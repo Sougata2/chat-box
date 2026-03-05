@@ -1,12 +1,15 @@
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { Message, WebSocketContextType } from "@/types/types";
+import { updateMessage } from "@/app/store/chatSlice";
+import { AppDispatch } from "@/app/store/store";
+import { useDispatch } from "react-redux";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
-import { toast } from "sonner";
 import { chat } from "@/app/clients/chatClient";
 
 import React from "react";
+import { refreshRooms } from "@/app/store/roomSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
@@ -27,6 +30,7 @@ function WebSocketProvider({
 }) {
   const clientRef = useRef<Client | null>(null);
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
+  const dispatch = useDispatch<AppDispatch>();
 
   const fetchCsrfToken = useCallback(async () => {
     try {
@@ -58,9 +62,10 @@ function WebSocketProvider({
     });
 
     stompClient.onConnect = () => {
-      toast.success("Connection Established");
       stompClient.subscribe("/user/queue/messages", (message) => {
-        console.log("Received " + message.body);
+        const incoming = JSON.parse(message.body) as Message;
+        dispatch(updateMessage(incoming));
+        dispatch(refreshRooms(incoming));
       });
     };
 
@@ -71,7 +76,7 @@ function WebSocketProvider({
     return () => {
       stompClient.deactivate();
     };
-  }, [csrfData?.headerName, csrfData?.token, token]);
+  }, [csrfData.headerName, csrfData.token, dispatch, token]);
 
   function sendPrivateMessage(recipient: string, message: Message) {
     clientRef.current?.publish({

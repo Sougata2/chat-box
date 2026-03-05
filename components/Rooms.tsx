@@ -4,6 +4,7 @@ import { ChangeEvent, useState } from "react";
 import { resetStack, stackPage } from "@/app/store/pageSlice";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { Page, PageLocator } from "@/app/types/page";
+import { roomSelectors } from "@/app/store/adapter/roomAdapter";
 import { toastError } from "./toastError";
 import { saveRoom } from "@/app/store/chatSlice";
 import { message } from "@/app/clients/messageClient";
@@ -14,7 +15,7 @@ import RoomBlock from "./RoomBlock";
 
 function Rooms() {
   const dispatch = useDispatch<AppDispatch>();
-  const rooms = useSelector((state: RootState) => state.rooms);
+  const rooms = useSelector(roomSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
 
   const [query, setQuery] = useState<string>("");
@@ -90,11 +91,14 @@ function Rooms() {
           </div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-slate-300 p-2 scrollbar-hide max-w-full">
-          {rooms.uuids
-            .filter((r) => matchsSearch(rooms.rooms[r], query))
-            .map((reference) => (
-              <div key={reference} onClick={() => selectRoomHandler(reference)}>
-                <RoomBlock loggedInUser={user} room={rooms.rooms[reference]} />
+          {rooms
+            .filter((room) => matchsSearch(room, query))
+            .map((room) => (
+              <div
+                key={room.referenceNumber}
+                onClick={() => selectRoomHandler(room.referenceNumber)}
+              >
+                <RoomBlock loggedInUser={user} room={room} />
               </div>
             ))}
         </div>

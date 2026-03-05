@@ -11,7 +11,6 @@ import { saveRoom, setMessage, setMessages } from "@/app/store/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { MediaDispatchContext } from "@/app/contexts";
-import { addRoom, unShiftRoom } from "@/app/store/roomSlice";
 import { Message, Room, User } from "@/types/types";
 import { Page, PageLocator } from "@/app/types/page";
 import { IoDocumentText } from "react-icons/io5";
@@ -24,6 +23,7 @@ import { stackPage } from "@/app/store/pageSlice";
 import { FaImages } from "react-icons/fa6";
 import { Textarea } from "./ui/textarea";
 import { MdGifBox } from "react-icons/md";
+import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message } from "@/app/clients/messageClient";
 import { useForm } from "react-hook-form";
 import { Button } from "./ui/button";
@@ -159,7 +159,7 @@ function MediaChat() {
       dispatch(setMessage(messagePayload));
 
       // update the room list to register the new message.
-      dispatch(unShiftRoom(messagePayload));
+      dispatch(refreshRooms(messagePayload));
 
       // send the message
       if (!recipient.email) return;
