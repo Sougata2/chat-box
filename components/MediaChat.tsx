@@ -7,10 +7,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
+import { saveRoom, setMessage, setMessages } from "@/app/store/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { MediaDispatchContext } from "@/app/contexts";
-import { saveRoom, setMessage, setMessages } from "@/app/store/chatSlice";
+import { addRoom, unShiftRoom } from "@/app/store/roomSlice";
 import { Message, Room, User } from "@/types/types";
 import { Page, PageLocator } from "@/app/types/page";
 import { IoDocumentText } from "react-icons/io5";
@@ -137,6 +138,10 @@ function MediaChat() {
         );
         // update the current room
         dispatch(saveRoom(newRoomResponse.data));
+
+        // add the new room in the room list.
+        dispatch(addRoom(newRoomResponse.data));
+
         // prepare the messsage payload
         messagePayload = {
           message: values.message,
@@ -152,7 +157,9 @@ function MediaChat() {
       }
       // put the message payload in the window
       dispatch(setMessage(messagePayload));
-      console.log("Message Payload", messagePayload);
+
+      // update the room list to register the new message.
+      dispatch(unShiftRoom(messagePayload));
 
       // send the message
       if (!recipient.email) return;

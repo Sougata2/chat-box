@@ -54,10 +54,12 @@ const roomSlice = createSlice({
 
       uuids.unshift(message.roomRef);
 
+      state.uuids = uuids;
+
       state.rooms[message.roomRef].lastMessage = action.payload;
     },
   },
 });
 
-export const { setRooms, addRoom, resetRooms } = roomSlice.actions;
+export const { setRooms, addRoom, unShiftRoom, resetRooms } = roomSlice.actions;
 export default roomSlice.reducer;
