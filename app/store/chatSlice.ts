@@ -1,16 +1,17 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Message, MessageMap, Room, User } from "@/types/types";
+import { Message, Room, User } from "@/types/types";
+import { messageAdapter } from "./adapter/messageAdapter";
 
 export interface chatState {
   room: Room | null;
   participants: User[];
-  messageMap: MessageMap;
+  messages: ReturnType<typeof messageAdapter.getInitialState>;
 }
 
 const initialState: chatState = {
   room: null,
   participants: [],
-  messageMap: { uuids: [], messages: {} },
+  messages: messageAdapter.getInitialState(),
 };
 
 const chatSlice = createSlice({
@@ -23,23 +24,18 @@ const chatSlice = createSlice({
     savePartipants(state, action: PayloadAction<User[]>) {
       state.participants = action.payload;
     },
-    setMessages(state, action: PayloadAction<MessageMap>) {
-      state.messageMap = action.payload;
+    setMessages(state, action: PayloadAction<Message[]>) {
+      messageAdapter.setAll(state.messages, action.payload);
     },
     setMessage(state, action: PayloadAction<Message>) {
-      const uuid = action.payload.uuid;
-      if (!uuid) return;
-
-      state.messageMap.uuids.unshift(uuid);
-      state.messageMap.messages[uuid] = action.payload;
+      messageAdapter.addOne(state.messages, action.payload);
     },
     updateMessage(state, action: PayloadAction<Message>) {
-      const uuid = action.payload.uuid;
-      if (!uuid) return;
-      state.messageMap.messages[uuid] = action.payload;
+      messageAdapter.upsertOne(state.messages, action.payload);
     },
     resetChat(state) {
       state.room = null;
+      messageAdapter.removeAll(state.messages);
     },
   },
 });

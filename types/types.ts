@@ -20,7 +20,7 @@ export type Type = "PRIVATE" | "GROUP";
 
 export type Message = {
   message: string | null;
-  uuid: string | null;
+  uuid: string;
   status: Status | null;
   media: Media | null;
   roomRef: string | null;
@@ -40,16 +40,6 @@ export type Room = {
   updatedAt: string | null;
   participants: number[] | null;
   lastMessage: Message | null;
-};
-
-export type RoomMap = {
-  uuids: string[];
-  rooms: Record<string, Room>;
-};
-
-export type MessageMap = {
-  uuids: string[];
-  messages: Record<string, Message>;
 };
 
 export type WebSocketContextType = {

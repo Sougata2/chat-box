@@ -37,6 +37,7 @@ import MessageBubble from "./ChatBubble";
 // import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
+import { messageSelectors } from "@/app/store/adapter/messageAdapter";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -52,11 +53,13 @@ function MediaChat() {
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
+  const forceInstantScroll = useRef(false);
   const shouldPlaySendNoti = useRef(false);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScroll = useRef(true);
 
-  const { messageMap, participants, room } = useSelector(
-    (state: RootState) => state.chat,
-  );
+  const { participants, room } = useSelector((state: RootState) => state.chat);
+  const messages = useSelector(messageSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
 
   const [gifOpen, setGifOpen] = useState(false);
@@ -71,6 +74,37 @@ function MediaChat() {
       toastError(error);
     }
   }, [dispatch, room]);
+
+  const scrollToBottom = (smooth = true) => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+
+    if (smooth) {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: "smooth",
+      });
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+  };
+
+  const handleScroll = () => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    shouldAutoScroll.current = nearBottom;
+  };
+
+  useEffect(() => {
+    if (shouldAutoScroll.current) {
+      requestAnimationFrame(() => {
+        scrollToBottom(!forceInstantScroll.current);
+        forceInstantScroll.current = false;
+      });
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (room?.referenceNumber) {
@@ -155,6 +189,8 @@ function MediaChat() {
           senderLastName: user?.lastName,
         } as Message;
       }
+      forceInstantScroll.current = true; // instant scroll to bottom for sender only
+
       // put the message payload in the window
       dispatch(setMessage(messagePayload));
 
@@ -278,38 +314,37 @@ function MediaChat() {
       "
     >
       <div
+        ref={chatContainerRef}
+        onScroll={handleScroll}
         className="
-          overflow-y-auto flex flex-col-reverse
+          overflow-y-auto flex flex-col
           min-h-0
           py-2.5 px-5
           scrollbar-hide gap-5
         "
       >
-        {messageMap?.uuids.map((uuid: string, index: number) => {
-          const msg = messageMap.messages[uuid];
-          const isMe = msg.senderEmail === user?.email;
+        {messages.map((message: Message, index: number) => {
+          const isMe = message.senderId === user?.id;
 
           let showDateBar: boolean = false;
 
-          const currentUUID = messageMap?.uuids[index];
-          const currentCreatedAt = messageMap.messages[currentUUID].createdAt;
+          const currentCreatedAt = message.createdAt;
           let currentDate = format(
             new Date(currentCreatedAt ?? new Date()),
             "dd-MM-yyyy",
           );
 
-          const previouseUUID =
-            messageMap.uuids[
-              index === messageMap.uuids.length - 1 ? index : index + 1
-            ];
-          const previousCreatedAt =
-            messageMap.messages[previouseUUID].createdAt;
-          const previousDate = format(
-            new Date(previousCreatedAt ?? new Date()),
-            "dd-MM-yyyy",
-          );
+          const previousMessage = messages[index - 1];
+          let previousDate: string | null = null;
 
-          if (currentDate !== previousDate) {
+          if (previousMessage?.createdAt) {
+            previousDate = format(
+              new Date(previousMessage.createdAt),
+              "dd-MM-yyyy",
+            );
+          }
+
+          if (!previousDate || currentDate !== previousDate) {
             showDateBar = true;
           }
 
@@ -319,7 +354,7 @@ function MediaChat() {
               : currentDate;
 
           return (
-            <div key={msg.uuid}>
+            <div key={message.uuid}>
               {/* DATE-BAR */}
               {showDateBar && (
                 <div
@@ -344,7 +379,9 @@ function MediaChat() {
                 </div>
               )}
               {/* MESSAGE-BLOCK */}
-              {msg.media === "TEXT" && <MessageBubble isMe={isMe} msg={msg} />}
+              {message.media === "TEXT" && (
+                <MessageBubble isMe={isMe} msg={message} />
+              )}
               {/* {msg.media === "IMAGE" && (
                 <MediaBubble isMe={isMe} media={msg.media} msg={msg} />
               )} */}

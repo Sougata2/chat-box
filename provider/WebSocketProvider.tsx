@@ -1,6 +1,7 @@
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { Message, WebSocketContextType } from "@/types/types";
 import { updateMessage } from "@/app/store/chatSlice";
+import { refreshRooms } from "@/app/store/roomSlice";
 import { AppDispatch } from "@/app/store/store";
 import { useDispatch } from "react-redux";
 import { toastError } from "@/components/toastError";
@@ -9,7 +10,6 @@ import { Client } from "@stomp/stompjs";
 import { chat } from "@/app/clients/chatClient";
 
 import React from "react";
-import { refreshRooms } from "@/app/store/roomSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
