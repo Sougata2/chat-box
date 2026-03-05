@@ -1,16 +1,12 @@
-import { chat } from "@/app/clients/chatClient";
-import { CsrfData } from "@/app/types/CsrfData";
-import { toastError } from "@/components/toastError";
+import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { Message, WebSocketContextType } from "@/types/types";
+import { toastError } from "@/components/toastError";
+import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
-import React, {
-  createContext,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
 import { toast } from "sonner";
+import { chat } from "@/app/clients/chatClient";
+
+import React from "react";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
