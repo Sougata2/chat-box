@@ -10,9 +10,11 @@ import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { saveRoom, setMessage, setMessages } from "@/app/store/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { MediaDispatchContext } from "@/app/contexts";
 import { Message, Room, User } from "@/types/types";
 import { Page, PageLocator } from "@/app/types/page";
+import { messageSelectors } from "@/app/store/adapter/messageAdapter";
 import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
 import { useWebsocket } from "@/hooks/useWebsocket";
@@ -23,7 +25,6 @@ import { stackPage } from "@/app/store/pageSlice";
 import { FaImages } from "react-icons/fa6";
 import { Textarea } from "./ui/textarea";
 import { MdGifBox } from "react-icons/md";
-import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message } from "@/app/clients/messageClient";
 import { useForm } from "react-hook-form";
 import { Button } from "./ui/button";
@@ -37,7 +38,6 @@ import MessageBubble from "./ChatBubble";
 // import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
-import { messageSelectors } from "@/app/store/adapter/messageAdapter";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -47,22 +47,31 @@ const formSchema = z.object({
 });
 
 function MediaChat() {
+  const websocket = useWebsocket();
   const setMediaFiles = useContext(MediaDispatchContext);
   const dispatch = useDispatch<AppDispatch>();
-  const websocket = useWebsocket();
 
+  const shouldAutoScroll = useRef(true);
+  const shouldPlaySendNoti = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
-  const forceInstantScroll = useRef(false);
-  const shouldPlaySendNoti = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
-  const shouldAutoScroll = useRef(true);
 
-  const { participants, room } = useSelector((state: RootState) => state.chat);
   const messages = useSelector(messageSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
+  const { participants, room } = useSelector((state: RootState) => state.chat);
 
   const [gifOpen, setGifOpen] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      message: "",
+      room: {
+        referenceNumber: "",
+      },
+    },
+  });
 
   const fetchMessageMap = useCallback(async () => {
     try {
@@ -75,18 +84,11 @@ function MediaChat() {
     }
   }, [dispatch, room]);
 
-  const scrollToBottom = (smooth = true) => {
+  const scrollToBottom = () => {
     const el = chatContainerRef.current;
     if (!el) return;
 
-    if (smooth) {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior: "smooth",
-      });
-    } else {
-      el.scrollTop = el.scrollHeight;
-    }
+    el.scrollTop = el.scrollHeight;
   };
 
   const handleScroll = () => {
@@ -100,8 +102,7 @@ function MediaChat() {
   useEffect(() => {
     if (shouldAutoScroll.current) {
       requestAnimationFrame(() => {
-        scrollToBottom(!forceInstantScroll.current);
-        forceInstantScroll.current = false;
+        scrollToBottom();
       });
     }
   }, [messages]);
@@ -114,16 +115,6 @@ function MediaChat() {
     }
   }, [fetchMessageMap, room?.referenceNumber]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      message: "",
-      room: {
-        referenceNumber: "",
-      },
-    },
-  });
-
   useEffect(() => {
     sendAudioRef.current = new Audio("/sent.mp3");
   }, []);
@@ -135,83 +126,6 @@ function MediaChat() {
       shouldPlaySendNoti.current = false;
     }
   }, []);
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      let messagePayload = {
-        message: values.message,
-        uuid: uuidv4(),
-        status: "NOT_SENT",
-        media: "TEXT",
-        roomRef: room?.referenceNumber,
-        senderId: user?.id,
-        senderEmail: user?.email,
-        senderFirstName: user?.firstName,
-        senderLastName: user?.lastName,
-      } as Message;
-
-      shouldPlaySendNoti.current = true;
-      // find the participant
-      const recipient = participants.find((p) => p.id !== user?.id) as User;
-      if (room && !room?.referenceNumber) {
-        if (!recipient?.id || !user?.id) return;
-        // create a new room payload
-        const newRoom: Room = {
-          referenceNumber: uuidv4(),
-          name: `${recipient.firstName} ${recipient.lastName}`,
-          type: "PRIVATE",
-          participants: [recipient?.id],
-          lastMessage: null,
-          createdAt: null,
-          updatedAt: null,
-        };
-        // save the new room.
-        const newRoomResponse = await message.post(
-          "/rooms/new-private",
-          newRoom,
-        );
-        // update the current room
-        dispatch(saveRoom(newRoomResponse.data));
-
-        // add the new room in the room list.
-        dispatch(addRoom(newRoomResponse.data));
-
-        // prepare the messsage payload
-        messagePayload = {
-          message: values.message,
-          uuid: uuidv4(),
-          status: "NOT_SENT",
-          media: "TEXT",
-          roomRef: newRoomResponse.data.referenceNumber,
-          senderId: user?.id,
-          senderEmail: user?.email,
-          senderFirstName: user?.firstName,
-          senderLastName: user?.lastName,
-        } as Message;
-      }
-      forceInstantScroll.current = true; // instant scroll to bottom for sender only
-
-      // put the message payload in the window
-      dispatch(setMessage(messagePayload));
-
-      // update the room list to register the new message.
-      dispatch(refreshRooms(messagePayload));
-
-      // send the message
-      if (!recipient.email) return;
-      websocket.sendPrivateMessage(recipient.email, messagePayload);
-      // update the message (in the socket)
-
-      form.setValue("message", "");
-      requestAnimationFrame(() => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "44px";
-        }
-      });
-    } catch (error) {
-      toastError(error);
-    }
-  }
 
   function fileInputOnChangeHandler(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -306,6 +220,84 @@ function MediaChat() {
       } as PageLocator),
     );
   };
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      let messagePayload = {
+        message: values.message,
+        uuid: uuidv4(),
+        status: "NOT_SENT",
+        media: "TEXT",
+        roomRef: room?.referenceNumber,
+        senderId: user?.id,
+        senderEmail: user?.email,
+        senderFirstName: user?.firstName,
+        senderLastName: user?.lastName,
+        createdAt: new Date().toISOString(),
+      } as Message;
+
+      shouldPlaySendNoti.current = true;
+      // find the participant
+      const recipient = participants.find((p) => p.id !== user?.id) as User;
+      if (room && !room?.referenceNumber) {
+        if (!recipient?.id || !user?.id) return;
+        // create a new room payload
+        const newRoom: Room = {
+          referenceNumber: uuidv4(),
+          name: `${recipient.firstName} ${recipient.lastName}`,
+          type: "PRIVATE",
+          participants: [recipient?.id],
+          lastMessage: null,
+          createdAt: null,
+          updatedAt: null,
+        };
+        // save the new room.
+        const newRoomResponse = await message.post(
+          "/rooms/new-private",
+          newRoom,
+        );
+        // update the current room
+        dispatch(saveRoom(newRoomResponse.data));
+
+        // add the new room in the room list.
+        dispatch(addRoom(newRoomResponse.data));
+
+        // prepare the messsage payload
+        messagePayload = {
+          message: values.message,
+          uuid: uuidv4(),
+          status: "NOT_SENT",
+          media: "TEXT",
+          roomRef: newRoomResponse.data.referenceNumber,
+          senderId: user?.id,
+          senderEmail: user?.email,
+          senderFirstName: user?.firstName,
+          senderLastName: user?.lastName,
+          createdAt: new Date().toISOString(),
+        } as Message;
+      }
+
+      // put the message payload in the window
+      dispatch(setMessage(messagePayload));
+
+      // update the room list to register the new message.
+      dispatch(refreshRooms(messagePayload));
+
+      // send the message
+      if (!recipient.email) return;
+      websocket.sendPrivateMessage(recipient.email, messagePayload);
+      // update the message (in the socket)
+
+      form.setValue("message", "");
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "44px";
+        }
+      });
+    } catch (error) {
+      toastError(error);
+    }
+  }
 
   return (
     <div
