@@ -1,16 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Message, Room, User } from "@/types/types";
 import { messageAdapter } from "./adapter/messageAdapter";
+import { Message, Room } from "@/types/types";
 
 export interface chatState {
   room: Room | null;
-  participants: User[];
   messages: ReturnType<typeof messageAdapter.getInitialState>;
 }
 
 const initialState: chatState = {
   room: null,
-  participants: [],
   messages: messageAdapter.getInitialState(),
 };
 
@@ -21,9 +19,6 @@ const chatSlice = createSlice({
     saveRoom(state, action: PayloadAction<Room>) {
       state.room = action.payload;
     },
-    savePartipants(state, action: PayloadAction<User[]>) {
-      state.participants = action.payload;
-    },
     setMessages(state, action: PayloadAction<Message[]>) {
       messageAdapter.setAll(state.messages, action.payload);
     },
@@ -31,6 +26,9 @@ const chatSlice = createSlice({
       messageAdapter.addOne(state.messages, action.payload);
     },
     updateMessage(state, action: PayloadAction<Message>) {
+      // display the message in the chat window only if the message
+      // belongs to the room.
+      if (state.room?.referenceNumber !== action.payload.roomRef) return;
       messageAdapter.upsertOne(state.messages, action.payload);
     },
     resetChat(state) {
@@ -40,12 +38,6 @@ const chatSlice = createSlice({
   },
 });
 
-export const {
-  saveRoom,
-  resetChat,
-  setMessage,
-  setMessages,
-  updateMessage,
-  savePartipants,
-} = chatSlice.actions;
+export const { saveRoom, resetChat, setMessage, setMessages, updateMessage } =
+  chatSlice.actions;
 export default chatSlice.reducer;

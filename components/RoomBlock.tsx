@@ -5,6 +5,8 @@ import { Room, User } from "@/types/types";
 import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
 
+import RoomName from "./RoomName";
+
 function RoomBlock({
   room,
   loggedInUser,
@@ -12,17 +14,27 @@ function RoomBlock({
   room: Room;
   loggedInUser: User | null;
 }) {
+  if (!loggedInUser?.id) return;
+  if (!room.participants) return;
+  const otherParticipant = room.participants.find(
+    (p) => p.id !== loggedInUser.id,
+  );
   return (
     <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer overflow-hidden">
       {room.type === "GROUP" && <GroupAvatar />}
       {room.type === "PRIVATE" && (
         <Avatar className="h-10 w-10">
           <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>{room.name?.[0]}</AvatarFallback>
+          <AvatarFallback>
+            {otherParticipant?.firstName?.[0]}
+            {otherParticipant?.lastName?.[0]}
+          </AvatarFallback>
         </Avatar>
       )}
       <div className="flex flex-col flex-1 min-w-0">
-        <div className="text-slate-700 font-medium capitalize">{room.name}</div>
+        <div className="text-slate-700 font-medium capitalize">
+          <RoomName room={room} user={loggedInUser} />
+        </div>
         <div className="flex items-center gap-1 text-[13px] font-medium text-slate-500 min-w-0 overflow-hidden">
           {room.lastMessage?.status === "NOT_SENT" && (
             <FiClock size={11} className="shrink-0" />

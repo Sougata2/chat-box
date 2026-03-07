@@ -1,8 +1,9 @@
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { Message, WebSocketContextType } from "@/types/types";
+import { addRoom, refreshRooms } from "@/app/store/roomSlice";
+import { message as msgClient } from "@/app/clients/messageClient";
+import { AppDispatch, store } from "@/app/store/store";
 import { updateMessage } from "@/app/store/chatSlice";
-import { refreshRooms } from "@/app/store/roomSlice";
-import { AppDispatch } from "@/app/store/store";
 import { useDispatch } from "react-redux";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
@@ -28,9 +29,9 @@ function WebSocketProvider({
   token: string | null;
   children: React.ReactNode;
 }) {
+  const dispatch = useDispatch<AppDispatch>();
   const clientRef = useRef<Client | null>(null);
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
-  const dispatch = useDispatch<AppDispatch>();
 
   const fetchCsrfToken = useCallback(async () => {
     try {
@@ -64,8 +65,20 @@ function WebSocketProvider({
     stompClient.onConnect = () => {
       stompClient.subscribe("/user/queue/messages", (message) => {
         const incoming = JSON.parse(message.body) as Message;
+        if (!incoming.roomRef) return;
+        const state = store.getState();
+        const rooms = state.rooms.entities;
+
+        if (rooms[incoming.roomRef]) {
+          dispatch(refreshRooms(incoming));
+        } else {
+          msgClient
+            .get(`/rooms/reference/${incoming.roomRef}`)
+            .then((response) => {
+              dispatch(addRoom(response.data));
+            });
+        }
         dispatch(updateMessage(incoming));
-        dispatch(refreshRooms(incoming));
       });
     };
 

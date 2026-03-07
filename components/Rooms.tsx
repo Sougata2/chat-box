@@ -96,7 +96,10 @@ function Rooms() {
             .map((room) => (
               <div
                 key={room.referenceNumber}
-                onClick={() => selectRoomHandler(room.referenceNumber)}
+                onClick={() => {
+                  if (!room.referenceNumber) return;
+                  selectRoomHandler(room.referenceNumber);
+                }}
               >
                 <RoomBlock loggedInUser={user} room={room} />
               </div>

@@ -59,7 +59,7 @@ function MediaChat() {
 
   const messages = useSelector(messageSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
-  const { participants, room } = useSelector((state: RootState) => state.chat);
+  const room = useSelector((state: RootState) => state.chat.room);
 
   const [gifOpen, setGifOpen] = useState(false);
 
@@ -237,30 +237,25 @@ function MediaChat() {
       } as Message;
 
       shouldPlaySendNoti.current = true;
-      // find the participant
-      const recipient = participants.find((p) => p.id !== user?.id) as User;
+
+      let recipient;
+
       if (room && !room?.referenceNumber) {
-        if (!recipient?.id || !user?.id) return;
-        // create a new room payload
-        const newRoom: Room = {
-          referenceNumber: uuidv4(),
-          name: `${recipient.firstName} ${recipient.lastName}`,
-          type: "PRIVATE",
-          participants: [recipient?.id],
-          lastMessage: null,
-          createdAt: null,
-          updatedAt: null,
-        };
         // save the new room.
-        const newRoomResponse = await message.post(
-          "/rooms/new-private",
-          newRoom,
-        );
+        const newRoomResponse = await message.post("/rooms/new-private", {
+          ...room,
+          referenceNumber: uuidv4(),
+        });
+        const newRoomData = newRoomResponse.data as Room;
+
         // update the current room
-        dispatch(saveRoom(newRoomResponse.data));
+        dispatch(saveRoom(newRoomData));
 
         // add the new room in the room list.
-        dispatch(addRoom(newRoomResponse.data));
+        dispatch(addRoom(newRoomData));
+
+        // set the recipient after room creation
+        recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
 
         // prepare the messsage payload
         messagePayload = {
@@ -282,6 +277,10 @@ function MediaChat() {
 
       // update the room list to register the new message.
       dispatch(refreshRooms(messagePayload));
+
+      // set the recipient for existing room.
+      if (!room?.participants) return;
+      recipient = room?.participants.find((p) => p.id !== user?.id) as User;
 
       // send the message
       if (!recipient.email) return;

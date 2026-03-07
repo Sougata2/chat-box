@@ -33,12 +33,12 @@ export type Message = {
 };
 
 export type Room = {
-  referenceNumber: string;
+  referenceNumber?: string;
   type: Type;
   name: string | null;
   createdAt: string | null;
   updatedAt: string | null;
-  participants: number[] | null;
+  participants: User[] | null;
   lastMessage: Message | null;
 };
 
