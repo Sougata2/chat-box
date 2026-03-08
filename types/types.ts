@@ -7,7 +7,7 @@ export type Status =
   | "READ"
   | "SENT";
 
-export type Media = "AUDIO" | "FILE" | "IMAGE" | "TEXT" | "VIDEO";
+export type Media = "AUDIO" | "DOCUMENT" | "IMAGE" | "TEXT" | "VIDEO";
 
 export type User = {
   id: number | null;
@@ -17,6 +17,8 @@ export type User = {
 };
 
 export type Type = "PRIVATE" | "GROUP";
+
+export type FileStatus = "UPLOADED" | "ATTACHED" | "ORPHANED";
 
 export type Message = {
   message: string | null;
@@ -30,6 +32,7 @@ export type Message = {
   senderEmail: string | null;
   senderFirstName: string | null;
   senderLastName: string | null;
+  fileIds: number[];
 };
 
 export type Room = {
@@ -40,6 +43,18 @@ export type Room = {
   updatedAt: string | null;
   participants: User[] | null;
   lastMessage: Message | null;
+};
+
+export type File = {
+  id?: number;
+  url?: string;
+  originalName?: string;
+  size?: number;
+  mimeType?: string;
+  status?: FileStatus;
+  createdAt?: string;
+  updatedAt?: string;
+  messageUUID?: string;
 };
 
 export type WebSocketContextType = {

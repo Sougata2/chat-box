@@ -1,37 +1,23 @@
 "use client";
 
-import { MediaContext, MediaDispatchContext } from "@/app/contexts";
+import { FileContext, FileDispatchContext } from "@/app/contexts";
 import { useCallback, useEffect, useState } from "react";
 import { initializePages } from "@/app/store/pageSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
 import { toastError } from "@/components/toastError";
 import { setRooms } from "@/app/store/roomSlice";
+import { message } from "@/app/clients/messageClient";
 
 import PageRenderer from "@/components/PageRenderer";
-import { message } from "@/app/clients/messageClient";
 
 function Page() {
   const dispatch = useDispatch<AppDispatch>();
-  const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
+  const [files, setFiles] = useState<FileList | null>(null);
 
   const fetchRooms = useCallback(async () => {
     try {
       const response = await message.get("/rooms/subscribed-rooms");
-      console.log(response.data);
-
-      // response.data.references.forEach((ref: string) => {
-      //   response.data.rooms[ref] = {
-      //     ...response.data.rooms[ref],
-      //     uuids: response.data.rooms[ref].messages[0]
-      //       ? [response.data.rooms[ref].messages[0].uuid]
-      //       : [],
-      //     messages: {
-      //       [response.data.rooms[ref].messages[0]?.uuid]:
-      //         response.data.rooms[ref].messages[0],
-      //     },
-      //   } as Room;
-      // });
       dispatch(setRooms(response.data));
     } catch (error) {
       toastError(error);
@@ -57,11 +43,11 @@ function Page() {
         <PageRenderer stack="rooms" />
       </div>
       <div className="rounded-2xl min-h-0">
-        <MediaDispatchContext.Provider value={setMediaFiles}>
-          <MediaContext.Provider value={mediaFiles}>
+        <FileDispatchContext.Provider value={setFiles}>
+          <FileContext.Provider value={files}>
             <PageRenderer stack="window" />
-          </MediaContext.Provider>
-        </MediaDispatchContext.Provider>
+          </FileContext.Provider>
+        </FileDispatchContext.Provider>
       </div>
     </div>
   );

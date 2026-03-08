@@ -8,7 +8,7 @@ setMediaFiles(...)
 ➡ even components that only need setFiles
 */
 
-export const MediaContext = createContext<FileList | null>(null);
-export const MediaDispatchContext = createContext<
+export const FileContext = createContext<FileList | null>(null);
+export const FileDispatchContext = createContext<
   ((files: FileList | null) => void) | null
 >(null);

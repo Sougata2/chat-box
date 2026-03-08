@@ -5,14 +5,19 @@ import {
   DropdownMenuLabel,
   DropdownMenu,
 } from "@/components/ui/dropdown-menu";
+import {
+  setMessages,
+  setMessage,
+  setFiles,
+  saveRoom,
+} from "@/app/store/chatSlice";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { File as ChatFile, Media, Message, Room, User } from "@/types/types";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
-import { saveRoom, setMessage, setMessages } from "@/app/store/chatSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
-import { MediaDispatchContext } from "@/app/contexts";
-import { Message, Room, User } from "@/types/types";
+import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
 import { IoDocumentText } from "react-icons/io5";
@@ -35,7 +40,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import MessageBubble from "./ChatBubble";
-// import MediaBubble from "./MediaBubble";
+import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
 
@@ -48,7 +53,7 @@ const formSchema = z.object({
 
 function MediaChat() {
   const websocket = useWebsocket();
-  const setMediaFiles = useContext(MediaDispatchContext);
+  const setFilesToContext = useContext(FileDispatchContext);
   const dispatch = useDispatch<AppDispatch>();
 
   const shouldAutoScroll = useRef(true);
@@ -60,6 +65,7 @@ function MediaChat() {
   const messages = useSelector(messageSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
   const room = useSelector((state: RootState) => state.chat.room);
+  const files = useSelector((state: RootState) => state.chat.files);
 
   const [gifOpen, setGifOpen] = useState(false);
 
@@ -73,12 +79,24 @@ function MediaChat() {
     },
   });
 
-  const fetchMessageMap = useCallback(async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const response = await message.get(
         `/messages/room/${room?.referenceNumber}`,
       );
       dispatch(setMessages(response.data));
+    } catch (error) {
+      toastError(error);
+    }
+  }, [dispatch, room]);
+
+  const fetchFiles = useCallback(async () => {
+    try {
+      const response = await message.get(
+        `/files/room/${room?.referenceNumber}`,
+      );
+      const files = response.data as ChatFile[];
+      dispatch(setFiles(files));
     } catch (error) {
       toastError(error);
     }
@@ -110,10 +128,11 @@ function MediaChat() {
   useEffect(() => {
     if (room?.referenceNumber) {
       (async () => {
-        await fetchMessageMap();
+        await fetchMessages();
+        await fetchFiles();
       })();
     }
-  }, [fetchMessageMap, room?.referenceNumber]);
+  }, [fetchFiles, fetchMessages, room?.referenceNumber]);
 
   useEffect(() => {
     sendAudioRef.current = new Audio("/sent.mp3");
@@ -129,6 +148,7 @@ function MediaChat() {
 
   function fileInputOnChangeHandler(
     event: React.ChangeEvent<HTMLInputElement>,
+    media: Media,
   ) {
     const input = event.target as HTMLInputElement;
 
@@ -139,8 +159,8 @@ function MediaChat() {
 
     const files = input.files as FileList;
 
-    if (setMediaFiles) {
-      setMediaFiles(files);
+    if (setFilesToContext) {
+      setFilesToContext(files);
     }
 
     dispatch(
@@ -150,6 +170,9 @@ function MediaChat() {
           name: "mediaUpload",
           closeable: true,
           import: "@/components/MediaUpload",
+          props: {
+            media,
+          },
         } as Page,
       } as PageLocator),
     );
@@ -179,8 +202,8 @@ function MediaChat() {
       const dt = new DataTransfer();
       files.forEach((f) => dt.items.add(f));
 
-      if (setMediaFiles) {
-        setMediaFiles(dt.files);
+      if (setFilesToContext) {
+        setFilesToContext(dt.files);
       }
 
       // open the Media upload.
@@ -191,6 +214,7 @@ function MediaChat() {
             name: "mediaUpload",
             closeable: true,
             import: "@/components/MediaUpload",
+            props: { media: "IMAGE" },
           } as Page,
         } as PageLocator),
       );
@@ -205,8 +229,8 @@ function MediaChat() {
     dt.items.add(file);
     const files = dt.files;
 
-    if (setMediaFiles) {
-      setMediaFiles(files); // your existing uploader
+    if (setFilesToContext) {
+      setFilesToContext(files); // your existing uploader
     }
     // open the Media upload.
     dispatch(
@@ -216,6 +240,7 @@ function MediaChat() {
           name: "mediaUpload",
           closeable: true,
           import: "@/components/MediaUpload",
+          props: { media: "IMAGE" },
         } as Page,
       } as PageLocator),
     );
@@ -373,9 +398,18 @@ function MediaChat() {
               {message.media === "TEXT" && (
                 <MessageBubble isMe={isMe} msg={message} />
               )}
-              {/* {msg.media === "IMAGE" && (
-                <MediaBubble isMe={isMe} media={msg.media} msg={msg} />
-              )} */}
+              {message.media === "IMAGE" && (
+                <MediaBubble
+                  isMe={isMe}
+                  files={files[message.uuid]}
+                  msg={message}
+                />
+                // <div>Image</div>
+              )}
+              {message.media === "DOCUMENT" && (
+                // <MediaBubble isMe={isMe} media={} msg={msg} />
+                <div>Document</div>
+              )}
             </div>
           );
         })}
@@ -434,7 +468,7 @@ function MediaChat() {
                   <Input
                     type="file"
                     id="image-upload"
-                    onChange={fileInputOnChangeHandler}
+                    onChange={(e) => fileInputOnChangeHandler(e, "IMAGE")}
                     accept=".jpg,.jpeg,.png,.gif,.webp,.bmp"
                     className="
                       hidden
@@ -463,7 +497,7 @@ function MediaChat() {
                   <Input
                     type="file"
                     id="document-upload"
-                    onChange={fileInputOnChangeHandler}
+                    onChange={(e) => fileInputOnChangeHandler(e, "DOCUMENT")}
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.odt"
                     className="
                       hidden

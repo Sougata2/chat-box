@@ -1,22 +1,24 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
+import { addFiles, saveRoom, setMessage } from "@/app/store/chatSlice";
+import { File as ChatFile, Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
-import { updateLatestMessage } from "@/app/store/roomSlice";
+import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { AiOutlineSend } from "react-icons/ai";
-import { MediaContext } from "@/app/contexts";
+import { useWebsocket } from "@/hooks/useWebsocket";
 import { v4 as uuidv4 } from "uuid";
-import { PendingMedia } from "@/app/types/media";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { FileContext } from "@/app/contexts";
 import { PageLocator } from "@/app/types/page";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PendingFile } from "@/types/Pendingfile";
 import { toastError } from "./toastError";
 import { Textarea } from "./ui/textarea";
-import { useForm } from "react-hook-form";
 import { FaXmark } from "react-icons/fa6";
+import { message } from "@/app/clients/messageClient";
 import { popPage } from "@/app/store/pageSlice";
-import { Message } from "@/app/types/room";
+import { useForm } from "react-hook-form";
 import { Button } from "./ui/button";
-import { chat } from "@/app/clients/chatClient";
 import { z } from "zod";
 
 import Image from "next/image";
@@ -30,18 +32,19 @@ const formSchema = z.object({
   }),
 });
 
-function MediaUpload() {
+function MediaUpload({ media }: { media: Media }) {
+  const websocket = useWebsocket();
   const dispatch = useDispatch<AppDispatch>();
-  const mediaFiles = useContext(MediaContext);
+  const files = useContext(FileContext);
 
-  const sendAudioRef = useRef<HTMLAudioElement | null>(null);
+  // const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const shouldPlaySendNoti = useRef(false);
 
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
 
-  const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [pendingFiles, setPendingFile] = useState<PendingFile[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [dimensions, setDimension] = useState<Record<string, imageDimension>>(
     {},
@@ -57,32 +60,24 @@ function MediaUpload() {
     },
   });
 
-  const initializePendingMedia = useCallback(() => {
-    if (!mediaFiles) return;
+  const initializePendingFile = useCallback(() => {
+    if (!files) return;
 
-    const list = Array.from(mediaFiles).map(
+    const list = Array.from(files).map(
       (file) =>
-        ({ file, previewUrl: URL.createObjectURL(file) }) as PendingMedia,
+        ({ file, previewUrl: URL.createObjectURL(file) }) as PendingFile,
     );
-    setPendingMedia(list);
+    setPendingFile(list);
     return () => {
       list.forEach((m) => URL.revokeObjectURL(m.previewUrl));
     };
-  }, [mediaFiles]);
-
-  useEffect(() => {
-    if (room?.referenceNumber) {
-      form.setValue("room.referenceNumber", room.referenceNumber);
-    } else {
-      form.setValue("room.referenceNumber", "");
-    }
-  }, [form, room?.referenceNumber]);
+  }, [files]);
 
   useEffect(() => {
     (() => {
-      initializePendingMedia();
+      initializePendingFile();
     })();
-  }, [initializePendingMedia]);
+  }, [initializePendingFile]);
 
   // useEffect(() => {
   //   if (sendAudioRef.current && shouldPlaySendNoti.current) {
@@ -92,61 +87,109 @@ function MediaUpload() {
   //   }
   // }, [room?.uuids.length]);
 
-  async function uploadAllMedia(): Promise<PendingMedia[]> {
+  async function uploadAllMedia(): Promise<ChatFile[]> {
     const formData = new FormData();
-    pendingMedia.forEach((m) => formData.append("files", m.file));
+    pendingFiles.forEach((m) => formData.append("files", m.file));
     setIsUploading(true);
 
-    const response = await chat.post("/media/upload", formData, {
+    const response = await message.post("/files/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    setIsUploading(false);
-    return pendingMedia.map((m, i) => ({
-      ...m,
-      uploaded: response.data[i],
-    }));
+    return response.data;
   }
 
-  // async function onSubmit(values: z.infer<typeof formSchema>) {
-  //   try {
-  //     let uploadedMedia: PendingMedia[] = [];
-  //     if (pendingMedia.length > 0) {
-  //       uploadedMedia = await uploadAllMedia();
-  //     }
-  //     const payload = {
-  //       ...values,
-  //       uuid: uuidv4(),
-  //       sender: {
-  //         email: user?.email,
-  //       },
-  //       type: "MEDIA",
-  //       senderEmail: user?.email,
-  //       media: uploadedMedia.map((m) => ({ id: m.uploaded.id })),
-  //     } as Message;
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      let uploadedFiles: ChatFile[] = [];
+      if (pendingFiles.length > 0) {
+        uploadedFiles = await uploadAllMedia();
+      }
 
-  //     dispatch(unShiftMessageOrRefreshPendingChat(payload));
-  //     dispatch(updateLatestMessage(payload));
-  //     shouldPlaySendNoti.current = true;
-  //     if (room && !room?.id) {
-  //       const newRoomPayload = { ...room, messages: [payload] };
-  //       await chat.post("/rooms/new-chat", newRoomPayload);
-  //     } else {
-  //       await chat.post("/media/send", payload);
-  //     }
-  //     console.log(payload);
+      const fileIds = uploadedFiles.map((file) => file.id);
 
-  //     form.setValue("message", "");
-  //     requestAnimationFrame(() => {
-  //       if (textareaRef.current) {
-  //         textareaRef.current.style.height = "44px";
-  //       }
-  //     });
-  //     dispatch(popPage({ stack: "media" } as PageLocator));
-  //   } catch (error) {
-  //     toastError(error);
-  //   }
-  // }
+      let messagePayload = {
+        message: values.message,
+        uuid: uuidv4(),
+        status: "NOT_SENT",
+        media: media,
+        roomRef: room?.referenceNumber,
+        senderId: user?.id,
+        senderEmail: user?.email,
+        senderFirstName: user?.firstName,
+        senderLastName: user?.lastName,
+        createdAt: new Date().toISOString(),
+        fileIds,
+      } as Message;
+
+      shouldPlaySendNoti.current = true;
+
+      let recipient;
+
+      if (room && !room?.referenceNumber) {
+        // save the new room.
+        const newRoomResponse = await message.post("/rooms/new-private", {
+          ...room,
+          referenceNumber: uuidv4(),
+        });
+        const newRoomData = newRoomResponse.data as Room;
+
+        // update the current room
+        dispatch(saveRoom(newRoomData));
+
+        // add the new room in the room list.
+        dispatch(addRoom(newRoomData));
+
+        // set the recipient after room creation
+        recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
+
+        // prepare the messsage payload
+        messagePayload = {
+          message: values.message,
+          uuid: uuidv4(),
+          status: "NOT_SENT",
+          media: media,
+          roomRef: newRoomResponse.data.referenceNumber,
+          senderId: user?.id,
+          senderEmail: user?.email,
+          senderFirstName: user?.firstName,
+          senderLastName: user?.lastName,
+          createdAt: new Date().toISOString(),
+          fileIds,
+        } as Message;
+      }
+
+      // place the uploaded files in the map.
+      dispatch(addFiles({ [messagePayload.uuid]: uploadedFiles }));
+
+      // put the message payload in the window
+      dispatch(setMessage(messagePayload));
+
+      // update the room list to register the new message.
+      dispatch(refreshRooms(messagePayload));
+
+      // set the recipient for existing room.
+      if (!room?.participants) return;
+      recipient = room?.participants.find((p) => p.id !== user?.id) as User;
+
+      // send the message
+      if (!recipient.email) return;
+      websocket.sendPrivateMessage(recipient.email, messagePayload);
+      // update the message (in the socket)
+
+      form.setValue("message", "");
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "44px";
+        }
+      });
+      dispatch(popPage({ stack: "media" } as PageLocator));
+    } catch (error) {
+      toastError(error);
+    } finally {
+      setIsUploading(false);
+    }
+  }
 
   return (
     <div
@@ -187,7 +230,7 @@ function MediaUpload() {
             items-center
           "
         >
-          {pendingMedia.map((pm) => {
+          {pendingFiles.map((pm) => {
             const dim = dimensions[pm.previewUrl];
             return (
               <div
@@ -227,7 +270,7 @@ function MediaUpload() {
       <div>
         <Form {...form}>
           <form
-            // onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
+            onSubmit={(e) => form.handleSubmit(onSubmit)(e)}
             className="
               grid grid-rows-[1fr_1fr]
             "
@@ -303,7 +346,7 @@ function MediaUpload() {
               >
                 <div className="flex gap-3.5 justify-between items-center">
                   <div className="flex gap-2 min-w-[80%] justify-center items-center">
-                    {pendingMedia.map((pm) => {
+                    {pendingFiles.map((pm) => {
                       return (
                         <div
                           key={pm.previewUrl}
@@ -318,6 +361,7 @@ function MediaUpload() {
                     <Button
                       type="submit"
                       size="icon-lg"
+                      disabled={isUploading}
                       className="
                         w-15! h-15!
                         bg-emerald-500

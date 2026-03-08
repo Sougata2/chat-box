@@ -7,15 +7,14 @@ import {
   Dialog,
 } from "@/components/ui/dialog";
 import { MdOutlineFileDownload } from "react-icons/md";
+import { File, Message } from "@/types/types";
 import { getNameColor } from "@/lib/utils";
 import { useSelector } from "react-redux";
 import { toastError } from "./toastError";
 import { RootState } from "@/app/store/store";
 import { TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
-import { Message } from "@/app/types/room";
 import { format } from "date-fns";
-import { Media } from "@/app/types/media";
 
 import Image from "next/image";
 
@@ -23,22 +22,22 @@ const MAX_PREVIEW = 4;
 
 function MediaBubble({
   msg,
-  media,
+  files,
   isMe,
 }: {
   msg: Message;
-  media: Media[];
+  files: File[];
   isMe: boolean;
 }) {
   const token = useSelector((state: RootState) => state.user.accessToken);
-  const previewMedia = media.slice(0, MAX_PREVIEW);
-  const remaining = media.length - MAX_PREVIEW;
+  const previewMedia = files?.slice(0, MAX_PREVIEW) ?? [];
+  const remaining = files?.length - MAX_PREVIEW;
 
   async function download(url: string) {
     if (!url) return;
 
     try {
-      const fullUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service${url}?token=${token}&download=true`;
+      const fullUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${url}?token=${token}&download=true`;
 
       const a = document.createElement("a");
       a.href = fullUrl;
@@ -75,16 +74,17 @@ function MediaBubble({
               mt-1 px-1
               text-xs font-semibold
               -translate-y-1 capitalize
-              ${getNameColor(msg.sender.firstName.toLowerCase())}
+              ${getNameColor(msg.senderFirstName?.toLowerCase())}
             `}
           >
-            {msg.sender.firstName} {msg.sender.lastName}
+            {msg.senderFirstName} {msg.senderLastName}
           </div>
         )}
         <div
           className="
             flex flex-col
             w-full min-w-52
+            min-h-44
             gap-1
           "
         >
@@ -105,7 +105,7 @@ function MediaBubble({
                     `}
                   >
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service${m.url}?token=${token}`}
+                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${m.url}?token=${token}`}
                       alt="media"
                       fill
                       unoptimized
@@ -205,7 +205,7 @@ function MediaBubble({
                     "
                   >
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}/chat-service${m.url}?token=${token}`}
+                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${m.url}?token=${token}`}
                       alt="preview"
                       width={1600}
                       height={1600}

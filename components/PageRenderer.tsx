@@ -9,33 +9,34 @@ import NewGroupMemberSelector from "./NewGroupMemberSelector";
 import NewGroupForm from "./NewGroupForm";
 import NewChatMenu from "./NewChatMenu";
 import MediaUpload from "./MediaUpload";
+import MediaChat from "./MediaChat";
 import Profile from "./Profile";
 import Window from "@/components/Window";
 import Rooms from "@/components/Rooms";
 import React from "react";
-import MediaChat from "./MediaChat";
 
 type RegistryObject<P = any> = {
   label?: string | null;
   component: React.ComponentType<P>;
 };
 
-export const pageRegistry: Record<string, RegistryObject | React.FC> = {
-  room: Rooms,
-  window: Window,
-  profile: Profile,
-  newChatMenu: { label: "New Chat", component: NewChatMenu },
-  newGroupMemberSelector: {
-    label: "Add Group Members",
-    component: NewGroupMemberSelector,
-  },
-  newGroupForm: {
-    label: "Create Group",
-    component: NewGroupForm,
-  },
-  mediaUpload: MediaUpload,
-  mediaChat: MediaChat,
-};
+export const pageRegistry: Record<string, RegistryObject<any> | React.FC<any>> =
+  {
+    room: Rooms,
+    window: Window,
+    profile: Profile,
+    newChatMenu: { label: "New Chat", component: NewChatMenu },
+    newGroupMemberSelector: {
+      label: "Add Group Members",
+      component: NewGroupMemberSelector,
+    },
+    newGroupForm: {
+      label: "Create Group",
+      component: NewGroupForm,
+    },
+    mediaUpload: MediaUpload,
+    mediaChat: MediaChat,
+  };
 
 export type StackKey = "rooms" | "window" | "profile" | "media";
 
@@ -50,7 +51,7 @@ function PageRenderer({ stack }: { stack: StackKey }) {
   const Component = pageRegistry[page.name];
 
   if (typeof Component === "function") {
-    return <Component />;
+    return <Component {...page.props} />;
   }
 
   if (!Component) return null;
