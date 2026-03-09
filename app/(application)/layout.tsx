@@ -15,7 +15,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         className="h-screen bg-repeat bg-size-[350px] bg-slate-400 dark:bg-slate-900"
         style={{ backgroundImage: "url('/whats-doodles.png')" }}
       >
-        <div className="h-full bg-white/75 dark:bg-slate-900/70">
+        <div className="h-full bg-white/65 dark:bg-slate-900/70">
           {children}
         </div>
       </div>

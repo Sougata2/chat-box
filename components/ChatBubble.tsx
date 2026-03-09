@@ -18,6 +18,7 @@ function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
           min-w-0 max-w-md
           p-2
           rounded-lg border
+          shadow-md
           items-end gap-x-2 wrap-anywhere [word-break:break-word]
           ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
         `}

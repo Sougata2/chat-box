@@ -62,6 +62,7 @@ function MediaBubble({
           grid grid-cols
           max-w-md
           p-1
+          shadow-md
           rounded-lg border
           gap-1 wrap-anywhere [word-break:break-word]
           ${isMe ? "bg-emerald-200 text-emerald-800" : "bg-white"}
