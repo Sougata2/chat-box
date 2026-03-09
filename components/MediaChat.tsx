@@ -5,18 +5,13 @@ import {
   DropdownMenuLabel,
   DropdownMenu,
 } from "@/components/ui/dropdown-menu";
-import {
-  setMessages,
-  setMessage,
-  setFiles,
-  saveRoom,
-} from "@/app/store/chatSlice";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { File as ChatFile, Media, Message, Room, User } from "@/types/types";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
+import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
+import { setMessage, saveRoom } from "@/app/store/chatSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
@@ -79,29 +74,6 @@ function MediaChat() {
     },
   });
 
-  const fetchMessages = useCallback(async () => {
-    try {
-      const response = await message.get(
-        `/messages/room/${room?.referenceNumber}`,
-      );
-      dispatch(setMessages(response.data));
-    } catch (error) {
-      toastError(error);
-    }
-  }, [dispatch, room]);
-
-  const fetchFiles = useCallback(async () => {
-    try {
-      const response = await message.get(
-        `/files/room/${room?.referenceNumber}`,
-      );
-      const files = response.data as ChatFile[];
-      dispatch(setFiles(files));
-    } catch (error) {
-      toastError(error);
-    }
-  }, [dispatch, room]);
-
   const scrollToBottom = () => {
     const el = chatContainerRef.current;
     if (!el) return;
@@ -124,15 +96,6 @@ function MediaChat() {
       });
     }
   }, [messages]);
-
-  useEffect(() => {
-    if (room?.referenceNumber) {
-      (async () => {
-        await fetchMessages();
-        await fetchFiles();
-      })();
-    }
-  }, [fetchFiles, fetchMessages, room?.referenceNumber]);
 
   useEffect(() => {
     sendAudioRef.current = new Audio("/sent.mp3");
