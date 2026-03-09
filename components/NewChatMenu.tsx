@@ -2,13 +2,13 @@ import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
+import { resetStack, stackPage } from "@/app/store/pageSlice";
+import { resetChat, saveRoom } from "@/app/store/chatSlice";
 import { Page, PageLocator } from "@/app/types/page";
 import { MdGroupAdd } from "react-icons/md";
 import { toastError } from "./toastError";
 import { AxiosError } from "axios";
 import { Room, User } from "@/types/types";
-import { resetStack, stackPage } from "@/app/store/pageSlice";
-import { saveRoom } from "@/app/store/chatSlice";
 import { message } from "@/app/clients/messageClient";
 import { Input } from "./ui/input";
 import { auth } from "@/app/clients/authClient";
@@ -16,6 +16,7 @@ import { auth } from "@/app/clients/authClient";
 function NewChatMenu() {
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
+
   const [contacts, setContacts] = useState<User[]>([]);
   const [query, setQuery] = useState<string>("");
 
@@ -47,6 +48,7 @@ function NewChatMenu() {
       const response = await message.get(
         `/rooms/find-private-chat?participant=${participant.id}`,
       );
+      dispatch(resetChat());
       dispatch(saveRoom(response.data));
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
@@ -60,6 +62,7 @@ function NewChatMenu() {
           createdAt: null,
           updatedAt: null,
         };
+        dispatch(resetChat());
         dispatch(saveRoom(newRoom));
         return;
       }
