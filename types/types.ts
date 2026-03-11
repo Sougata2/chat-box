@@ -60,4 +60,6 @@ export type File = {
 export type WebSocketContextType = {
   socket: React.RefObject<Client | null>;
   sendPrivateMessage: (recipient: string, message: Message) => void;
+  postGroup: (room: Room) => void;
+  sendGroupMessage: (reference: string, message: Message) => void;
 };

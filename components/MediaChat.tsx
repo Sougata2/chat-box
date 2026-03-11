@@ -211,6 +211,8 @@ function MediaChat() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      if (!room?.referenceNumber) return;
+
       let messagePayload = {
         message: values.message,
         uuid: uuidv4(),
@@ -226,61 +228,78 @@ function MediaChat() {
 
       shouldPlaySendNoti.current = true;
 
-      let recipient;
+      if (room?.type === "GROUP") {
+        // put the message payload in the window
+        dispatch(setMessage(messagePayload));
 
-      if (room && !room?.referenceNumber) {
-        // save the new room.
-        const newRoomResponse = await message.post("/rooms/new-private", {
-          ...room,
-          referenceNumber: uuidv4(),
+        // update the room list to register the new message.
+        dispatch(refreshRooms(messagePayload));
+
+        websocket.sendGroupMessage(room.referenceNumber, messagePayload);
+
+        form.setValue("message", "");
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.style.height = "44px";
+          }
         });
-        const newRoomData = newRoomResponse.data as Room;
+      } else {
+        let recipient;
 
-        // update the current room
-        dispatch(saveRoom(newRoomData));
+        if (room && !room?.referenceNumber) {
+          // save the new room.
+          const newRoomResponse = await message.post("/rooms/new-private", {
+            ...room,
+            referenceNumber: uuidv4(),
+          });
+          const newRoomData = newRoomResponse.data as Room;
 
-        // add the new room in the room list.
-        dispatch(addRoom(newRoomData));
+          // update the current room
+          dispatch(saveRoom(newRoomData));
 
-        // set the recipient after room creation
-        recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
+          // add the new room in the room list.
+          dispatch(addRoom(newRoomData));
 
-        // prepare the messsage payload
-        messagePayload = {
-          message: values.message,
-          uuid: uuidv4(),
-          status: "NOT_SENT",
-          media: "TEXT",
-          roomRef: newRoomResponse.data.referenceNumber,
-          senderId: user?.id,
-          senderEmail: user?.email,
-          senderFirstName: user?.firstName,
-          senderLastName: user?.lastName,
-          createdAt: new Date().toISOString(),
-        } as Message;
-      }
+          // set the recipient after room creation
+          recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
 
-      // put the message payload in the window
-      dispatch(setMessage(messagePayload));
-
-      // update the room list to register the new message.
-      dispatch(refreshRooms(messagePayload));
-
-      // set the recipient for existing room.
-      if (!room?.participants) return;
-      recipient = room?.participants.find((p) => p.id !== user?.id) as User;
-
-      // send the message
-      if (!recipient.email) return;
-      websocket.sendPrivateMessage(recipient.email, messagePayload);
-      // update the message (in the socket)
-
-      form.setValue("message", "");
-      requestAnimationFrame(() => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "44px";
+          // prepare the messsage payload
+          messagePayload = {
+            message: values.message,
+            uuid: uuidv4(),
+            status: "NOT_SENT",
+            media: "TEXT",
+            roomRef: newRoomResponse.data.referenceNumber,
+            senderId: user?.id,
+            senderEmail: user?.email,
+            senderFirstName: user?.firstName,
+            senderLastName: user?.lastName,
+            createdAt: new Date().toISOString(),
+          } as Message;
         }
-      });
+
+        // put the message payload in the window
+        dispatch(setMessage(messagePayload));
+
+        // update the room list to register the new message.
+        dispatch(refreshRooms(messagePayload));
+
+        // set the recipient for existing room.
+        if (!room?.participants) return;
+        recipient = room?.participants.find((p) => p.id !== user?.id) as User;
+
+        // send the message
+        if (!recipient.email) return;
+        websocket.sendPrivateMessage(recipient.email, messagePayload);
+        // update the message (in the socket)
+
+        form.setValue("message", "");
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.style.height = "44px";
+          }
+        });
+      }
     } catch (error) {
       toastError(error);
     }
