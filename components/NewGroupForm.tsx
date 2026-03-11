@@ -43,10 +43,8 @@ function NewGroupForm({ selectedContacts }: { selectedContacts: User[] }) {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const roomRef = uuidv4();
-
       const payload = {
-        referenceNumber: roomRef,
+        referenceNumber: uuidv4(),
         type: "GROUP",
         name: values.name,
         participants: [...selectedContacts, loggedInUser],

@@ -155,7 +155,7 @@ function WebSocketProvider({
   function postGroup(room: Room) {
     clientRef.current?.publish({
       destination: "/app/group.post",
-      body: JSON.stringify({ room }),
+      body: JSON.stringify(room),
     });
   }
 

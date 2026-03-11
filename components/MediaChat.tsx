@@ -22,7 +22,7 @@ import { v4 as uuidv4 } from "uuid";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toastError } from "./toastError";
 import { stackPage } from "@/app/store/pageSlice";
-import { FaImages } from "react-icons/fa6";
+import { FaImages, FaLock } from "react-icons/fa6";
 import { Textarea } from "./ui/textarea";
 import { MdGifBox } from "react-icons/md";
 import { message } from "@/app/clients/messageClient";
@@ -377,20 +377,49 @@ function MediaChat() {
                 </div>
               )}
               {/* MESSAGE-BLOCK */}
-              {message.media === "TEXT" && (
-                <MessageBubble isMe={isMe} msg={message} />
-              )}
-              {message.media === "IMAGE" && (
-                <MediaBubble
-                  isMe={isMe}
-                  files={files[message.uuid]}
-                  msg={message}
-                />
-                // <div>Image</div>
-              )}
-              {message.media === "DOCUMENT" && (
-                // <MediaBubble isMe={isMe} media={} msg={msg} />
-                <div>Document</div>
+              {message.type === "SYSTEM" ? (
+                <div
+                  className={`
+                    flex
+                    items-center
+                    gap-1
+                    mx-auto
+                    my-2
+                    px-3
+                    py-1
+                    text-xs
+                    text-gray-600
+                    bg-yellow-100
+                    rounded-lg
+                    shadow-sm
+                    w-fit
+                    max-w-[70%]
+                    text-center
+                    `}
+                >
+                  <span>
+                    <FaLock size={12} className="text-slate-800" />
+                  </span>
+                  {message.message}
+                </div>
+              ) : (
+                <>
+                  {message.media === "TEXT" && (
+                    <MessageBubble isMe={isMe} msg={message} />
+                  )}
+                  {message.media === "IMAGE" && (
+                    <MediaBubble
+                      isMe={isMe}
+                      files={files[message.uuid]}
+                      msg={message}
+                    />
+                    // <div>Image</div>
+                  )}
+                  {message.media === "DOCUMENT" && (
+                    // <MediaBubble isMe={isMe} media={} msg={msg} />
+                    <div>Document</div>
+                  )}
+                </>
               )}
             </div>
           );

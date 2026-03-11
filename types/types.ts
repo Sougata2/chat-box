@@ -20,12 +20,15 @@ export type Type = "PRIVATE" | "GROUP";
 
 export type FileStatus = "UPLOADED" | "ATTACHED" | "ORPHANED";
 
+export type MessageType = "USER" | "SYSTEM";
+
 export type Message = {
   message: string | null;
   uuid: string;
   status: Status | null;
   media: Media | null;
   roomRef: string | null;
+  type?: MessageType;
   createdAt: string | null;
   updatedAt: string | null;
   senderId: number | null;
