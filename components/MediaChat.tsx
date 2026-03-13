@@ -211,8 +211,6 @@ function MediaChat() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      if (!room?.referenceNumber) return;
-
       let messagePayload = {
         message: values.message,
         uuid: uuidv4(),
@@ -234,6 +232,8 @@ function MediaChat() {
 
         // update the room list to register the new message.
         dispatch(refreshRooms(messagePayload));
+
+        if (!room?.referenceNumber) return;
 
         websocket.sendGroupMessage(room.referenceNumber, messagePayload);
 

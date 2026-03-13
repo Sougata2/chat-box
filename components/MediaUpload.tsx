@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { File as ChatFile, Media, Message, Room, User } from "@/types/types";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { addFiles, saveRoom, setMessage } from "@/app/store/chatSlice";
-import { File as ChatFile, Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
@@ -124,65 +124,84 @@ function MediaUpload({ media }: { media: Media }) {
 
       shouldPlaySendNoti.current = true;
 
-      let recipient;
+      if (room?.type === "GROUP") {
+        // put the message payload in the window
+        dispatch(setMessage(messagePayload));
 
-      if (room && !room?.referenceNumber) {
-        // save the new room.
-        const newRoomResponse = await message.post("/rooms/new-private", {
-          ...room,
-          referenceNumber: uuidv4(),
+        // update the room list to register the new message.
+        dispatch(refreshRooms(messagePayload));
+
+        if (!room?.referenceNumber) return;
+
+        websocket.sendGroupMessage(room.referenceNumber, messagePayload);
+
+        form.setValue("message", "");
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.style.height = "44px";
+          }
         });
-        const newRoomData = newRoomResponse.data as Room;
+      } else {
+        let recipient;
 
-        // update the current room
-        dispatch(saveRoom(newRoomData));
+        if (room && !room?.referenceNumber) {
+          // save the new room.
+          const newRoomResponse = await message.post("/rooms/new-private", {
+            ...room,
+            referenceNumber: uuidv4(),
+          });
+          const newRoomData = newRoomResponse.data as Room;
 
-        // add the new room in the room list.
-        dispatch(addRoom(newRoomData));
+          // update the current room
+          dispatch(saveRoom(newRoomData));
 
-        // set the recipient after room creation
-        recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
+          // add the new room in the room list.
+          dispatch(addRoom(newRoomData));
 
-        // prepare the messsage payload
-        messagePayload = {
-          message: values.message,
-          uuid: uuidv4(),
-          status: "NOT_SENT",
-          media: media,
-          roomRef: newRoomResponse.data.referenceNumber,
-          senderId: user?.id,
-          senderEmail: user?.email,
-          senderFirstName: user?.firstName,
-          senderLastName: user?.lastName,
-          createdAt: new Date().toISOString(),
-          fileIds,
-        } as Message;
-      }
+          // set the recipient after room creation
+          recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
 
-      // place the uploaded files in the map.
-      dispatch(addFiles({ [messagePayload.uuid]: uploadedFiles }));
-
-      // put the message payload in the window
-      dispatch(setMessage(messagePayload));
-
-      // update the room list to register the new message.
-      dispatch(refreshRooms(messagePayload));
-
-      // set the recipient for existing room.
-      if (!room?.participants) return;
-      recipient = room?.participants.find((p) => p.id !== user?.id) as User;
-
-      // send the message
-      if (!recipient.email) return;
-      websocket.sendPrivateMessage(recipient.email, messagePayload);
-      // update the message (in the socket)
-
-      form.setValue("message", "");
-      requestAnimationFrame(() => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "44px";
+          // prepare the messsage payload
+          messagePayload = {
+            message: values.message,
+            uuid: uuidv4(),
+            status: "NOT_SENT",
+            media: media,
+            roomRef: newRoomResponse.data.referenceNumber,
+            senderId: user?.id,
+            senderEmail: user?.email,
+            senderFirstName: user?.firstName,
+            senderLastName: user?.lastName,
+            createdAt: new Date().toISOString(),
+            fileIds,
+          } as Message;
         }
-      });
+
+        // place the uploaded files in the map.
+        dispatch(addFiles({ [messagePayload.uuid]: uploadedFiles }));
+
+        // put the message payload in the window
+        dispatch(setMessage(messagePayload));
+
+        // update the room list to register the new message.
+        dispatch(refreshRooms(messagePayload));
+
+        // set the recipient for existing room.
+        if (!room?.participants) return;
+        recipient = room?.participants.find((p) => p.id !== user?.id) as User;
+
+        // send the message
+        if (!recipient.email) return;
+        websocket.sendPrivateMessage(recipient.email, messagePayload);
+        // update the message (in the socket)
+
+        form.setValue("message", "");
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.style.height = "44px";
+          }
+        });
+      }
       dispatch(popPage({ stack: "media" } as PageLocator));
     } catch (error) {
       toastError(error);

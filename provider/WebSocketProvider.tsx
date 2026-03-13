@@ -6,12 +6,17 @@ import {
   useRef,
   useMemo,
 } from "react";
-import { Message, Room, WebSocketContextType } from "@/types/types";
+import {
+  WebSocketContextType,
+  IncomingMessage,
+  Message,
+  Room,
+} from "@/types/types";
 import { AppDispatch, RootState, store } from "@/app/store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
-import { updateMessage } from "@/app/store/chatSlice";
+import { addFiles, updateMessage } from "@/app/store/chatSlice";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
@@ -78,21 +83,24 @@ function WebSocketProvider({
 
     stompClient.onConnect = () => {
       stompClient.subscribe("/user/queue/messages", (message) => {
-        const incoming = JSON.parse(message.body) as Message;
-        if (!incoming.roomRef) return;
+        const incoming = JSON.parse(message.body) as IncomingMessage;
+        if (!incoming.message.roomRef) return;
         const state = store.getState();
         const rooms = state.rooms.entities;
 
-        if (rooms[incoming.roomRef]) {
-          dispatch(refreshRooms(incoming));
+        if (rooms[incoming.message.roomRef]) {
+          dispatch(refreshRooms(incoming.message));
         } else {
           msgClient
-            .get(`/rooms/reference/${incoming.roomRef}`)
+            .get(`/rooms/reference/${incoming.message.roomRef}`)
             .then((response) => {
               dispatch(addRoom(response.data));
             });
         }
-        dispatch(updateMessage(incoming));
+        if (incoming.files) {
+          dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
+        }
+        dispatch(updateMessage(incoming.message));
       });
 
       stompClient.subscribe("/user/queue/rooms", (message) => {
@@ -106,9 +114,12 @@ function WebSocketProvider({
         stompClient.subscribe(
           `/topic/room/${room.referenceNumber}`,
           (message) => {
-            const incoming = JSON.parse(message.body) as Message;
-            dispatch(refreshRooms(incoming));
-            dispatch(updateMessage(incoming));
+            const incoming = JSON.parse(message.body) as IncomingMessage;
+            dispatch(refreshRooms(incoming.message));
+            if (incoming.files) {
+              dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
+            }
+            dispatch(updateMessage(incoming.message));
           },
         );
       });
@@ -137,10 +148,13 @@ function WebSocketProvider({
       if (subscriptions.current.has(room.referenceNumber)) return;
 
       client.subscribe(`/topic/room/${room.referenceNumber}`, (message) => {
-        const incoming = JSON.parse(message.body) as Message;
+        const incoming = JSON.parse(message.body) as IncomingMessage;
 
-        dispatch(refreshRooms(incoming));
-        dispatch(updateMessage(incoming));
+        dispatch(refreshRooms(incoming.message));
+        if (incoming.files) {
+          dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
+        }
+        dispatch(updateMessage(incoming.message));
       });
     });
   }, [dispatch, groups, rooms.entities]);

@@ -60,6 +60,11 @@ export type File = {
   messageUUID?: string;
 };
 
+export type IncomingMessage = {
+  message: Message;
+  files?: File[];
+};
+
 export type WebSocketContextType = {
   socket: React.RefObject<Client | null>;
   sendPrivateMessage: (recipient: string, message: Message) => void;
