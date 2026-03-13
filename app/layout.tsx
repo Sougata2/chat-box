@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
 import "./globals.css";
 import AuthProvider from "./AuthProvider";
+import "@/utils/consoleOverride";
+import ConsoleProvider from "@/utils/ConsoleProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +33,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster richColors position="top-center" duration={3000} />
-        <Providers>
-          <AuthProvider>{children}</AuthProvider>
-        </Providers>
+        <ConsoleProvider>
+          <Toaster richColors position="top-center" duration={3000} />
+          <Providers>
+            <AuthProvider>{children}</AuthProvider>
+          </Providers>
+        </ConsoleProvider>
       </body>
     </html>
   );
