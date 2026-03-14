@@ -1,22 +1,15 @@
 import {
-  createContext,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-  useMemo,
-} from "react";
-import {
   WebSocketContextType,
   IncomingMessage,
   Message,
   Room,
 } from "@/types/types";
-import { AppDispatch, RootState, store } from "@/app/store/store";
-import { useDispatch, useSelector } from "react-redux";
+import { createContext, useCallback, useEffect, useState, useRef } from "react";
+import { addFiles, updateMessage } from "@/app/store/chatSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
-import { addFiles, updateMessage } from "@/app/store/chatSlice";
+import { AppDispatch, store } from "@/app/store/store";
+import { useDispatch } from "react-redux";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
@@ -43,14 +36,8 @@ function WebSocketProvider({
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const clientRef = useRef<Client | null>(null);
-  const subscriptions = useRef<Set<string>>(new Set());
 
-  const rooms = useSelector((state: RootState) => state.rooms);
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
-
-  const groups = useMemo(() => {
-    return rooms.ids.filter((id) => rooms.entities[id].type === "GROUP");
-  }, [rooms.entities, rooms.ids]);
 
   const fetchCsrfToken = useCallback(async () => {
     try {
@@ -123,6 +110,29 @@ function WebSocketProvider({
           },
         );
       });
+
+      // subscribe to groups
+      const state = store.getState();
+      const rooms = state.rooms.entities;
+
+      Object.values(rooms).forEach((room) => {
+        if (room.type === "GROUP" && room.referenceNumber) {
+          stompClient.subscribe(
+            `/topic/room/${room.referenceNumber}`,
+            (message) => {
+              const incoming = JSON.parse(message.body);
+
+              dispatch(refreshRooms(incoming.message));
+
+              if (incoming.files) {
+                dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
+              }
+
+              dispatch(updateMessage(incoming.message));
+            },
+          );
+        }
+      });
     };
 
     stompClient.activate();
@@ -133,31 +143,6 @@ function WebSocketProvider({
       stompClient.deactivate();
     };
   }, [csrfData.headerName, csrfData.token, dispatch, token]);
-
-  useEffect(() => {
-    /**
-     * Group Subscriptions
-     */
-    const client = clientRef.current;
-    if (!client || !client.connected) return;
-
-    groups.forEach((id) => {
-      const room = rooms.entities[id];
-      if (!room.referenceNumber) return;
-
-      if (subscriptions.current.has(room.referenceNumber)) return;
-
-      client.subscribe(`/topic/room/${room.referenceNumber}`, (message) => {
-        const incoming = JSON.parse(message.body) as IncomingMessage;
-
-        dispatch(refreshRooms(incoming.message));
-        if (incoming.files) {
-          dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
-        }
-        dispatch(updateMessage(incoming.message));
-      });
-    });
-  }, [dispatch, groups, rooms.entities]);
 
   function sendPrivateMessage(recipient: string, message: Message) {
     clientRef.current?.publish({
