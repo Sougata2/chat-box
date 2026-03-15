@@ -7,7 +7,19 @@ export type Status =
   | "READ"
   | "SENT";
 
+export type PresenceStatus =
+  | "OFFLINE"
+  | "ONLINE"
+  | "RECORDING_AUDIO"
+  | "TYPING";
+
 export type Media = "AUDIO" | "DOCUMENT" | "IMAGE" | "TEXT" | "VIDEO";
+
+export type FileStatus = "UPLOADED" | "ATTACHED" | "ORPHANED";
+
+export type MessageType = "USER" | "SYSTEM";
+
+export type Type = "PRIVATE" | "GROUP";
 
 export type User = {
   id: number | null;
@@ -15,12 +27,6 @@ export type User = {
   lastName: string | null;
   email: string | null;
 };
-
-export type Type = "PRIVATE" | "GROUP";
-
-export type FileStatus = "UPLOADED" | "ATTACHED" | "ORPHANED";
-
-export type MessageType = "USER" | "SYSTEM";
 
 export type Message = {
   message: string | null;
@@ -65,9 +71,21 @@ export type IncomingMessage = {
   files?: File[];
 };
 
+export type TypingDto = {
+  roomRef: string;
+  username: string;
+};
+
+export type PresenceDto = {
+  username: string;
+  status: PresenceStatus;
+  lastSeen?: string;
+};
+
 export type WebSocketContextType = {
   socket: React.RefObject<Client | null>;
   sendPrivateMessage: (recipient: string, message: Message) => void;
   postGroup: (room: Room) => void;
   sendGroupMessage: (reference: string, message: Message) => void;
+  sendTyping: (reference: string, username: string) => void;
 };

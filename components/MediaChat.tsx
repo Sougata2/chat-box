@@ -209,6 +209,14 @@ function MediaChat() {
     );
   };
 
+  function handleTyping() {
+    if (!room?.referenceNumber) return;
+    if (!user?.email) return;
+    if (!websocket.socket.current?.connected) return;
+
+    websocket.sendTyping(room?.referenceNumber, user?.email);
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       let messagePayload = {
@@ -538,7 +546,7 @@ function MediaChat() {
                 control={form.control}
                 name="message"
                 render={({ field }) => {
-                  const { ref, ...rest } = field;
+                  const { ref, onChange, ...rest } = field;
                   return (
                     <FormItem
                       className="
@@ -568,6 +576,10 @@ function MediaChat() {
                             }
                           }}
                           onPaste={handlePaste}
+                          onChange={(e) => {
+                            onChange(e); // react-hook-form update
+                            handleTyping(); // websocket typing event
+                          }}
                           {...rest}
                           className="
                             overflow-y-auto

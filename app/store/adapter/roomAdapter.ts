@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { Room } from "@/types/types";
 
 export const roomAdapter = createEntityAdapter<Room, string>({
-  selectId: (room) => room.referenceNumber,
+  selectId: (room) => room?.referenceNumber ?? "",
   sortComparer: (a, b) => {
     const aTime = a.lastMessage?.createdAt
       ? new Date(a.lastMessage.createdAt).getTime()

@@ -3,6 +3,8 @@ import {
   IncomingMessage,
   Message,
   Room,
+  TypingDto,
+  PresenceDto,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { addFiles, updateMessage } from "@/app/store/chatSlice";
@@ -64,7 +66,7 @@ function WebSocketProvider({
         Authorization: `Bearer ${token}`,
         [csrfData.headerName]: csrfData.token,
       },
-      debug: (str) => console.log(str),
+      debug: (str) => console.info(str),
       reconnectDelay: 5000,
     });
 
@@ -111,7 +113,7 @@ function WebSocketProvider({
         );
       });
 
-      // subscribe to groups
+      // subscribe to groups and typing
       const state = store.getState();
       const rooms = state.rooms.entities;
 
@@ -132,6 +134,21 @@ function WebSocketProvider({
             },
           );
         }
+
+        // subscribe to typing
+        stompClient.subscribe(
+          `/topic/typing/${room.referenceNumber}`,
+          (message) => {
+            const typing = JSON.parse(message.body) as TypingDto;
+            console.log(typing);
+          },
+        );
+      });
+
+      // subscribe to presence
+      stompClient.subscribe("/topic/presence", (message) => {
+        const presence = JSON.parse(message.body) as PresenceDto;
+        console.log(presence);
       });
     };
 
@@ -165,6 +182,13 @@ function WebSocketProvider({
     });
   }
 
+  function sendTyping(reference: string, username: string) {
+    clientRef.current?.publish({
+      destination: "/app/chat.typing",
+      body: JSON.stringify({ roomRef: reference, username }),
+    });
+  }
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -172,6 +196,7 @@ function WebSocketProvider({
         sendPrivateMessage,
         postGroup,
         sendGroupMessage,
+        sendTyping,
       }}
     >
       {children}
