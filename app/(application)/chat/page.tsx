@@ -3,6 +3,7 @@
 import { FileContext, FileDispatchContext } from "@/app/contexts";
 import { useCallback, useEffect, useState } from "react";
 import { initializePages } from "@/app/store/pageSlice";
+import { setParticipants } from "@/app/store/participantSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
 import { toastError } from "@/components/toastError";
@@ -24,11 +25,21 @@ function Page() {
     }
   }, [dispatch]);
 
+  const fetchParticipants = useCallback(async () => {
+    try {
+      const response = await message.get("/rooms/chat-partners");
+      dispatch(setParticipants(response.data));
+    } catch (error) {
+      toastError(error);
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     (async () => {
       await fetchRooms();
+      await fetchParticipants();
     })();
-  }, [fetchRooms]);
+  }, [fetchParticipants, fetchRooms]);
 
   useEffect(() => {
     dispatch(initializePages());
