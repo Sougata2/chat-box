@@ -26,6 +26,7 @@ export type User = {
   firstName: string | null;
   lastName: string | null;
   email: string | null;
+  lastSeen: string | null;
 };
 
 export type Message = {

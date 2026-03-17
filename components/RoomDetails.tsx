@@ -28,14 +28,16 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/app/store/store";
 
 import RoomName from "./RoomName";
+import UserPresence from "./UserPresence";
 
 function RoomDetails() {
   const room = useSelector((state: RootState) => state.chat.room);
   const user = useSelector((state: RootState) => state.user.user);
-  //   const { presenceMap } = useSelector((state: RootState) => state.presence);
 
   if (!room?.participants) return;
   const otherParticipant = room.participants.find((p) => p.id !== user?.id);
+
+  if (!otherParticipant) return;
 
   // async function muteRoom() {
   //   if (!user?.email) return;
@@ -105,25 +107,7 @@ function RoomDetails() {
                 .join(", ")}
             </span>
           )}
-          {/* {!room?.groupName && (
-              <span
-                className="
-                text-xs text-slate-500 lowercase
-              "
-              >
-                {presenceMap[otherParticipant?.email ?? ""]?.status ===
-                  "ONLINE" && <span className="text-emerald-500">● </span>}
-                {presenceMap[otherParticipant?.email ?? ""]?.status ===
-                "OFFLINE"
-                  ? `last seen • ${format(
-                      new Date(
-                        presenceMap[otherParticipant?.email ?? ""]?.lastSeen,
-                      ),
-                      "hh:mm aaa (dd-MM-yy)",
-                    )}`
-                  : presenceMap[otherParticipant?.email ?? ""]?.status}
-              </span>
-            )} */}
+          {room?.type === "PRIVATE" && <UserPresence user={otherParticipant} />}
         </div>
       </div>
       {/* <div>

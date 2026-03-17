@@ -7,6 +7,7 @@ import {
   PresenceDto,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
+import { addPresence, updatePresence } from "@/app/store/presenceSlice";
 import { addFiles, updateMessage } from "@/app/store/chatSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
@@ -148,7 +149,11 @@ function WebSocketProvider({
       // subscribe to presence
       stompClient.subscribe("/topic/presence", (message) => {
         const presence = JSON.parse(message.body) as PresenceDto;
+        const presenceSlice = store.getState().presence;
         console.log(presence);
+        if (presenceSlice.entities[presence.username])
+          dispatch(updatePresence(presence));
+        else dispatch(addPresence(presence));
       });
     };
 

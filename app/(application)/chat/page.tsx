@@ -6,9 +6,11 @@ import { initializePages } from "@/app/store/pageSlice";
 import { setParticipants } from "@/app/store/participantSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
+import { setPresence } from "@/app/store/presenceSlice";
 import { toastError } from "@/components/toastError";
 import { setRooms } from "@/app/store/roomSlice";
 import { message } from "@/app/clients/messageClient";
+import { chat } from "@/app/clients/chatClient";
 
 import PageRenderer from "@/components/PageRenderer";
 
@@ -34,12 +36,22 @@ function Page() {
     }
   }, [dispatch]);
 
+  const fetchOnlineUsers = useCallback(async () => {
+    try {
+      const response = await chat.get("/presence/online-users");
+      dispatch(setPresence(response.data));
+    } catch (error) {
+      toastError(error);
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     (async () => {
       await fetchRooms();
       await fetchParticipants();
+      await fetchOnlineUsers();
     })();
-  }, [fetchParticipants, fetchRooms]);
+  }, [fetchOnlineUsers, fetchParticipants, fetchRooms]);
 
   useEffect(() => {
     dispatch(initializePages());
