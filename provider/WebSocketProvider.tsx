@@ -5,6 +5,7 @@ import {
   Room,
   TypingDto,
   PresenceDto,
+  TypingStatus,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { addPresence, updatePresence } from "@/app/store/presenceSlice";
@@ -40,7 +41,7 @@ function WebSocketProvider({
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const clientRef = useRef<Client | null>(null);
-  const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  // const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
 
@@ -145,22 +146,25 @@ function WebSocketProvider({
             const typing = JSON.parse(message.body) as TypingDto;
             console.log("Typing", typing);
 
-            const { roomRef, username } = typing;
+            const { status } = typing;
 
-            const key = `${roomRef}-${username}`;
-
-            dispatch(addTyping(typing));
-
-            if (typingTimeouts.current.has(key)) {
-              clearTimeout(typingTimeouts.current.get(key));
+            // const key = `${roomRef}-${username}`;
+            if (status === "START") {
+              dispatch(addTyping(typing));
+            } else {
+              dispatch(removeTyping(typing));
             }
 
-            const timeout = setTimeout(() => {
-              dispatch(removeTyping(typing));
-              typingTimeouts.current.delete(key);
-            }, 3000);
+            // if (typingTimeouts.current.has(key)) {
+            //   clearTimeout(typingTimeouts.current.get(key));
+            // }
 
-            typingTimeouts.current.set(key, timeout);
+            // const timeout = setTimeout(() => {
+            //   dispatch(removeTyping(typing));
+            //   typingTimeouts.current.delete(key);
+            // }, 3000);
+
+            // typingTimeouts.current.set(key, timeout);
           },
         );
       });
@@ -206,10 +210,14 @@ function WebSocketProvider({
     });
   }
 
-  function sendTyping(reference: string, username: string) {
+  function sendTyping(
+    reference: string,
+    username: string,
+    status: TypingStatus,
+  ) {
     clientRef.current?.publish({
       destination: "/app/chat.typing",
-      body: JSON.stringify({ roomRef: reference, username }),
+      body: JSON.stringify({ roomRef: reference, username, status }),
     });
   }
 

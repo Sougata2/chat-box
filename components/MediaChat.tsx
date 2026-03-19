@@ -56,6 +56,8 @@ function MediaChat() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
 
   const messages = useSelector(messageSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
@@ -123,6 +125,14 @@ function MediaChat() {
       sendAudioRef.current.play().catch(() => {});
       shouldPlaySendNoti.current = false;
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
   }, []);
 
   function fileInputOnChangeHandler(
@@ -225,12 +235,29 @@ function MediaChat() {
     );
   };
 
-  function handleTyping() {
+  function handleTyping(e: React.ChangeEvent<HTMLTextAreaElement>) {
     if (!room?.referenceNumber) return;
     if (!user?.email) return;
     if (!websocket.socket.current?.connected) return;
 
-    websocket.sendTyping(room?.referenceNumber, user?.email);
+    if (e.target.value.trim().length === 0) return;
+
+    if (!isTypingRef.current) {
+      websocket.sendTyping(room.referenceNumber, user.email, "START");
+      isTypingRef.current = true;
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    const currentRoomRef = room.referenceNumber;
+    const currentUserEmail = user.email;
+
+    typingTimeoutRef.current = setTimeout(() => {
+      websocket.sendTyping(currentRoomRef, currentUserEmail, "STOP");
+      isTypingRef.current = false;
+    }, 2000);
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -594,7 +621,7 @@ function MediaChat() {
                           onPaste={handlePaste}
                           onChange={(e) => {
                             onChange(e); // react-hook-form update
-                            handleTyping(); // websocket typing event
+                            handleTyping(e); // websocket typing event
                           }}
                           {...rest}
                           className="

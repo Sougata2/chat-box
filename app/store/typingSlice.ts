@@ -26,7 +26,9 @@ const typingSlice = createSlice({
     removeTyping(state, action: PayloadAction<TypingDto>) {
       const typing = action.payload;
       if (!state.typingMap[typing.roomRef]) return;
-      state.typingMap[typing.roomRef].shift();
+      state.typingMap[typing.roomRef] = state.typingMap[typing.roomRef].filter(
+        (u) => u !== typing.username,
+      );
     },
   },
 });

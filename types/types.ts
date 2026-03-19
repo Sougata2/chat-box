@@ -21,6 +21,8 @@ export type MessageType = "USER" | "SYSTEM";
 
 export type Type = "PRIVATE" | "GROUP";
 
+export type TypingStatus = "START" | "STOP";
+
 export type User = {
   id: number | null;
   firstName: string | null;
@@ -75,6 +77,7 @@ export type IncomingMessage = {
 export type TypingDto = {
   roomRef: string;
   username: string;
+  status: TypingStatus;
 };
 
 export type PresenceDto = {
@@ -88,5 +91,9 @@ export type WebSocketContextType = {
   sendPrivateMessage: (recipient: string, message: Message) => void;
   postGroup: (room: Room) => void;
   sendGroupMessage: (reference: string, message: Message) => void;
-  sendTyping: (reference: string, username: string) => void;
+  sendTyping: (
+    reference: string,
+    username: string,
+    status: TypingStatus,
+  ) => void;
 };
