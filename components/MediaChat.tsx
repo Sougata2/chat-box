@@ -61,6 +61,22 @@ function MediaChat() {
   const user = useSelector((state: RootState) => state.user.user);
   const room = useSelector((state: RootState) => state.chat.room);
   const files = useSelector((state: RootState) => state.chat.files);
+  const participants = useSelector(
+    (state: RootState) => state.participants.entities,
+  );
+  const typing = useSelector((state: RootState) => state.typing.typingMap);
+
+  useEffect(() => {
+    if (!room?.referenceNumber) return;
+    if (!typing[room?.referenceNumber]) return;
+    const typingUsers = typing[room?.referenceNumber];
+    if (typingUsers.length === 0) return;
+    const typingUserId = typingUsers[0];
+    console.log(typingUserId);
+
+    if (!participants[typingUserId]) return;
+    console.log(participants[typingUserId]?.firstName);
+  }, [participants, room, typing]);
 
   const [gifOpen, setGifOpen] = useState(false);
 

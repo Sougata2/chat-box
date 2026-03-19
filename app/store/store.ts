@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 
 import participantReducer from "@/app/store/participantSlice";
 import presenceReducer from "@/app/store/presenceSlice";
+import typingReducer from "@/app/store/typingSlice";
 import userReducer from "@/app/store/userSlice";
 import roomReducer from "@/app/store/roomSlice";
 import chatReducer from "@/app/store/chatSlice";
@@ -13,6 +14,7 @@ export const store = configureStore({
     rooms: roomReducer,
     chat: chatReducer,
     page: pageReducer,
+    typing: typingReducer,
     presence: presenceReducer,
     participants: participantReducer,
   },

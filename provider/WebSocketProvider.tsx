@@ -19,6 +19,7 @@ import { Client } from "@stomp/stompjs";
 import { chat } from "@/app/clients/chatClient";
 
 import React from "react";
+import { addTyping, removeTyping } from "@/app/store/typingSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
@@ -39,6 +40,7 @@ function WebSocketProvider({
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const clientRef = useRef<Client | null>(null);
+  const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
 
@@ -141,7 +143,24 @@ function WebSocketProvider({
           `/topic/typing/${room.referenceNumber}`,
           (message) => {
             const typing = JSON.parse(message.body) as TypingDto;
-            console.log(typing);
+            console.log("Typing", typing);
+
+            const { roomRef, username } = typing;
+
+            const key = `${roomRef}-${username}`;
+
+            dispatch(addTyping(typing));
+
+            if (typingTimeouts.current.has(key)) {
+              clearTimeout(typingTimeouts.current.get(key));
+            }
+
+            const timeout = setTimeout(() => {
+              dispatch(removeTyping(typing));
+              typingTimeouts.current.delete(key);
+            }, 3000);
+
+            typingTimeouts.current.set(key, timeout);
           },
         );
       });
@@ -150,7 +169,7 @@ function WebSocketProvider({
       stompClient.subscribe("/topic/presence", (message) => {
         const presence = JSON.parse(message.body) as PresenceDto;
         const presenceSlice = store.getState().presence;
-        console.log(presence);
+        console.log("Presence : ", presence);
         if (presenceSlice.entities[presence.username])
           dispatch(updatePresence(presence));
         else dispatch(addPresence(presence));
