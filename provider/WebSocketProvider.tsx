@@ -10,6 +10,7 @@ import {
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { addPresence, updatePresence } from "@/app/store/presenceSlice";
 import { addFiles, updateMessage } from "@/app/store/chatSlice";
+import { addTyping, removeTyping } from "@/app/store/typingSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
 import { AppDispatch, store } from "@/app/store/store";
@@ -20,7 +21,6 @@ import { Client } from "@stomp/stompjs";
 import { chat } from "@/app/clients/chatClient";
 
 import React from "react";
-import { addTyping, removeTyping } from "@/app/store/typingSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
