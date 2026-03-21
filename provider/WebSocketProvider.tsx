@@ -143,10 +143,13 @@ function WebSocketProvider({
         stompClient.subscribe(
           `/topic/typing/${room.referenceNumber}`,
           (message) => {
+            const signedUser = store.getState().user;
+            if (!signedUser) return;
+            if (!signedUser.user?.email) return;
             const typing = JSON.parse(message.body) as TypingDto;
+            const { status, username } = typing;
+            if (signedUser.user.email === username) return;
             console.log("Typing", typing);
-
-            const { status } = typing;
 
             // const key = `${roomRef}-${username}`;
             if (status === "START") {

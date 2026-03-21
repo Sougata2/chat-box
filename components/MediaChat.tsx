@@ -38,6 +38,7 @@ import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
+import TypingIndicator from "./TypingIndicator";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -134,6 +135,19 @@ function MediaChat() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!room?.referenceNumber) return;
+
+    const typingUsers = typing[room.referenceNumber];
+    if (!typingUsers || typingUsers.length === 0) return;
+
+    if (shouldAutoScroll.current) {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }
+  }, [room?.referenceNumber, typing]);
 
   function fileInputOnChangeHandler(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -430,23 +444,7 @@ function MediaChat() {
               {/* MESSAGE-BLOCK */}
               {message.type === "SYSTEM" ? (
                 <div
-                  className={`
-                    flex
-                    items-center
-                    gap-1
-                    mx-auto
-                    my-2
-                    px-3
-                    py-1
-                    text-xs
-                    text-gray-600
-                    bg-yellow-100
-                    rounded-lg
-                    shadow-sm
-                    w-fit
-                    max-w-[70%]
-                    text-center
-                    `}
+                  className={`flex items-center gap-1 mx-auto my-2 px-3 py-1 text-xs text-gray-600 bg-yellow-100 rounded-lg shadow-sm w-fit max-w-[70%] text-center`}
                 >
                   <span>
                     <FaLock size={12} className="text-slate-800" />
@@ -475,6 +473,7 @@ function MediaChat() {
             </div>
           );
         })}
+        <TypingIndicator />
       </div>
 
       <Form {...form}>
