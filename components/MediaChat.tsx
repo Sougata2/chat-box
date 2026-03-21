@@ -271,7 +271,7 @@ function MediaChat() {
     typingTimeoutRef.current = setTimeout(() => {
       websocket.sendTyping(currentRoomRef, currentUserEmail, "STOP");
       isTypingRef.current = false;
-    }, 2000);
+    }, 1000);
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -365,6 +365,9 @@ function MediaChat() {
           }
         });
       }
+      if (!room?.referenceNumber) return;
+      if (!user?.email) return;
+      websocket.sendTyping(room?.referenceNumber, user?.email, "STOP");
     } catch (error) {
       toastError(error);
     }
