@@ -55,13 +55,13 @@ function RoomBlock({
 
           <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap truncate flex items-center gap-1">
             {typingMap[room.referenceNumber]?.length > 0 ? (
-              <span className="shrink-0 text-emerald-600">
+              <span className="shrink-0 text-emerald-600 capitalize">
                 {chatPartners[typingMap[room.referenceNumber][0]].firstName} is
                 typing
               </span>
             ) : (
               <>
-                <span className="shrink-0">
+                <span className="shrink-0 capitalize">
                   {room.lastMessage?.senderId === loggedInUser?.id
                     ? "You: "
                     : `${room.lastMessage?.senderFirstName}: `}
