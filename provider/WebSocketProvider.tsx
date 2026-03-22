@@ -65,9 +65,9 @@ function WebSocketProvider({
     debouncedTypingRef.current = debounce(
       (reference: string, username: string, status: TypingStatus) => {
         const client = clientRef.current;
-        if (!client) return;
+        if (!client?.publish) return;
 
-        client.publish({
+        client?.publish({
           destination: "/app/chat.typing",
           body: JSON.stringify({ roomRef: reference, username, status }),
         });
