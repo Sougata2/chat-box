@@ -13,6 +13,7 @@ function TypingIndicator() {
   if (!typingMap[room?.referenceNumber]) return null;
   if (typingMap[room.referenceNumber].length === 0) return null;
   if (!chatPartners[typingMap[room.referenceNumber][0]]) return null;
+  const typersSize = typingMap[room.referenceNumber].length;
   const typer = chatPartners[typingMap[room.referenceNumber][0]];
   if (!typer.firstName) return null;
 
@@ -21,7 +22,10 @@ function TypingIndicator() {
       <span
         className={`text-xs font-semibold capitalize ${getNameColor(typer.firstName.toLowerCase())}`}
       >
-        {typer.firstName}
+        {typer.firstName}{" "}
+        {typersSize > 1 && (
+          <span>{`+ ${typersSize} other${typersSize > 2 ? "s" : ""}`}</span>
+        )}
       </span>
       {/* Dots */}
       <div className="flex items-center gap-1 my-2">
