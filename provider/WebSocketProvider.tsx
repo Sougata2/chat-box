@@ -271,7 +271,7 @@ function WebSocketProvider({
       const client = clientRef.current;
       if (!client) return;
 
-      client.publish({
+      client?.publish({
         destination: "/app/chat.typing",
         body: JSON.stringify({ roomRef: reference, username, status }),
       });
