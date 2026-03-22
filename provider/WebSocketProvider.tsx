@@ -13,9 +13,9 @@ import { addFiles, updateMessage } from "@/app/store/chatSlice";
 import { addTyping, removeTyping } from "@/app/store/typingSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
-import { AppDispatch, store } from "@/app/store/store";
+import { AppDispatch, RootState, store } from "@/app/store/store";
 import type { DebouncedFunc } from "lodash";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
@@ -47,6 +47,8 @@ function WebSocketProvider({
   const debouncedTypingRef = useRef<DebouncedFunc<
     (reference: string, username: string, status: TypingStatus) => void
   > | null>(null);
+
+  const rooms = useSelector((state: RootState) => state.rooms.entities);
 
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
 
@@ -142,8 +144,6 @@ function WebSocketProvider({
       });
 
       // subscribe to groups and typing
-      const state = store.getState();
-      const rooms = state.rooms.entities;
 
       Object.values(rooms).forEach((room) => {
         if (room.type === "GROUP" && room.referenceNumber) {
@@ -214,7 +214,7 @@ function WebSocketProvider({
     return () => {
       stompClient.deactivate();
     };
-  }, [csrfData.headerName, csrfData.token, dispatch, token]);
+  }, [csrfData, dispatch, rooms, token]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
