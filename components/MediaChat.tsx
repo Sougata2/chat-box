@@ -476,7 +476,9 @@ function MediaChat() {
             </div>
           );
         })}
-        <TypingIndicator />
+        {room?.referenceNumber && (
+          <TypingIndicator roomRef={room?.referenceNumber} type="INDICATOR" />
+        )}
       </div>
 
       <Form {...form}>

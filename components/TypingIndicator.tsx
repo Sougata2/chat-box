@@ -2,20 +2,28 @@ import { getNameColor } from "@/lib/utils";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store/store";
 
-function TypingIndicator() {
-  const room = useSelector((state: RootState) => state.chat.room);
+function TypingIndicator({
+  roomRef,
+  type,
+}: {
+  roomRef: string;
+  type: "TEXT" | "INDICATOR";
+}) {
   const typingMap = useSelector((state: RootState) => state.typing.typingMap);
   const chatPartners = useSelector(
     (state: RootState) => state.participants.entities,
   );
 
-  if (!room?.referenceNumber) return null;
-  if (!typingMap[room?.referenceNumber]) return null;
-  if (typingMap[room.referenceNumber].length === 0) return null;
-  if (!chatPartners[typingMap[room.referenceNumber][0]]) return null;
-  const typersSize = typingMap[room.referenceNumber].length;
-  const typer = chatPartners[typingMap[room.referenceNumber][0]];
+  if (!typingMap[roomRef]) return null;
+  if (typingMap[roomRef].length === 0) return null;
+  if (!chatPartners[typingMap[roomRef][0]]) return null;
+  const typersSize = typingMap[roomRef].length;
+  const typer = chatPartners[typingMap[roomRef][0]];
   if (!typer.firstName) return null;
+
+  if (type === "TEXT") {
+    return <div>{typer.firstName} is typing...</div>;
+  }
 
   return (
     <div className={`flex flex-col bg-white w-fit px-2 shadow-lg rounded-lg`}>
