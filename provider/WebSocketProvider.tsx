@@ -1,11 +1,11 @@
 import {
-  WebSocketContextType,
-  IncomingMessage,
-  Message,
   Room,
+  Message,
   TypingDto,
   PresenceDto,
   TypingStatus,
+  IncomingMessage,
+  WebSocketContextType,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { addPresence, updatePresence } from "@/app/store/presenceSlice";
@@ -14,12 +14,14 @@ import { addTyping, removeTyping } from "@/app/store/typingSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
 import { AppDispatch, store } from "@/app/store/store";
+import type { DebouncedFunc } from "lodash";
 import { useDispatch } from "react-redux";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
 import { chat } from "@/app/clients/chatClient";
 
+import debounce from "lodash.debounce";
 import React from "react";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
@@ -41,7 +43,10 @@ function WebSocketProvider({
 }) {
   const dispatch = useDispatch<AppDispatch>();
   const clientRef = useRef<Client | null>(null);
-  // const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const debouncedTypingRef = useRef<DebouncedFunc<
+    (reference: string, username: string, status: TypingStatus) => void
+  > | null>(null);
 
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
 
@@ -52,6 +57,25 @@ function WebSocketProvider({
     } catch (error) {
       toastError(error);
     }
+  }, []);
+
+  useEffect(() => {
+    debouncedTypingRef.current = debounce(
+      (reference: string, username: string, status: TypingStatus) => {
+        const client = clientRef.current;
+        if (!client) return;
+
+        client.publish({
+          destination: "/app/chat.typing",
+          body: JSON.stringify({ roomRef: reference, username, status }),
+        });
+      },
+      500,
+    );
+
+    return () => {
+      debouncedTypingRef.current?.cancel();
+    };
   }, []);
 
   useEffect(() => {
@@ -147,27 +171,27 @@ function WebSocketProvider({
             if (!signedUser) return;
             if (!signedUser.user?.email) return;
             const typing = JSON.parse(message.body) as TypingDto;
-            const { status, username } = typing;
-            if (signedUser.user.email === username) return;
             console.log("Typing", typing);
+            const { roomRef, status, username } = typing;
+            if (signedUser.user.email === username) return;
 
-            // const key = `${roomRef}-${username}`;
+            const key = `${roomRef}-${username}`;
             if (status === "START") {
               dispatch(addTyping(typing));
             } else {
               dispatch(removeTyping(typing));
             }
 
-            // if (typingTimeouts.current.has(key)) {
-            //   clearTimeout(typingTimeouts.current.get(key));
-            // }
+            if (typingTimeouts.current.has(key)) {
+              clearTimeout(typingTimeouts.current.get(key));
+            }
 
-            // const timeout = setTimeout(() => {
-            //   dispatch(removeTyping(typing));
-            //   typingTimeouts.current.delete(key);
-            // }, 3000);
+            const timeout = setTimeout(() => {
+              dispatch(removeTyping(typing));
+              typingTimeouts.current.delete(key);
+            }, 10000);
 
-            // typingTimeouts.current.set(key, timeout);
+            typingTimeouts.current.set(key, timeout);
           },
         );
       });
@@ -191,6 +215,28 @@ function WebSocketProvider({
       stompClient.deactivate();
     };
   }, [csrfData.headerName, csrfData.token, dispatch, token]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        if (clientRef.current && clientRef.current.connected) return;
+
+        console.warn("Reconnecting WebSocket");
+
+        if (clientRef.current) {
+          clientRef.current.deactivate().then(() => {
+            clientRef.current?.activate();
+          });
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   function sendPrivateMessage(recipient: string, message: Message) {
     clientRef.current?.publish({
@@ -218,10 +264,18 @@ function WebSocketProvider({
     username: string,
     status: TypingStatus,
   ) {
-    clientRef.current?.publish({
-      destination: "/app/chat.typing",
-      body: JSON.stringify({ roomRef: reference, username, status }),
-    });
+    if (status === "START") {
+      debouncedTypingRef.current?.(reference, username, status);
+    } else {
+      // STOP should be instant
+      const client = clientRef.current;
+      if (!client) return;
+
+      client.publish({
+        destination: "/app/chat.typing",
+        body: JSON.stringify({ roomRef: reference, username, status }),
+      });
+    }
   }
 
   return (
