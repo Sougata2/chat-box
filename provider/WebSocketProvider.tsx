@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Room,
   Message,
@@ -212,6 +213,16 @@ function WebSocketProvider({
           dispatch(updatePresence(presence));
         else dispatch(addPresence(presence));
       });
+
+      const interval = setInterval(() => {
+        console.log("heart-beat");
+        clientRef.current?.publish({
+          destination: "/app/heartbeat",
+          body: JSON.stringify({}),
+        });
+      }, 60000); // store it for cleanup
+
+      (stompClient as any).hbInterval = interval;
     };
 
     stompClient.activate();
@@ -219,6 +230,9 @@ function WebSocketProvider({
     clientRef.current = stompClient;
 
     return () => {
+      if ((stompClient as any).hbInterval) {
+        clearInterval((stompClient as any).hbInterval);
+      }
       stompClient.deactivate();
     };
   }, [csrfData, dispatch, token]);
