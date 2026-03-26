@@ -44,6 +44,7 @@ function WebSocketProvider({
   const dispatch = useDispatch<AppDispatch>();
   const clientRef = useRef<Client | null>(null);
   const typingTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const subscriptions = useRef<Set<string>>(new Set());
   const debouncedTypingRef = useRef<DebouncedFunc<
     (reference: string, username: string, status: TypingStatus) => void
   > | null>(null);
@@ -143,10 +144,15 @@ function WebSocketProvider({
         );
       });
 
+      // prevents reconnection
+      const stateRooms = store.getState().rooms.entities;
       // subscribe to groups and typing
+      subscriptions.current.clear();
 
-      Object.values(rooms).forEach((room) => {
-        if (room.type === "GROUP" && room.referenceNumber) {
+      Object.values(stateRooms).forEach((room) => {
+        if (!room.referenceNumber) return;
+
+        if (room.type === "GROUP") {
           stompClient.subscribe(
             `/topic/room/${room.referenceNumber}`,
             (message) => {
@@ -194,6 +200,7 @@ function WebSocketProvider({
             typingTimeouts.current.set(key, timeout);
           },
         );
+        subscriptions.current.add(room.referenceNumber);
       });
 
       // subscribe to presence
@@ -214,7 +221,65 @@ function WebSocketProvider({
     return () => {
       stompClient.deactivate();
     };
-  }, [csrfData, dispatch, rooms, token]);
+  }, [csrfData, dispatch, token]);
+
+  useEffect(() => {
+    const stompClient = clientRef.current;
+    if (!stompClient?.connected) return;
+
+    Object.values(rooms).forEach((room) => {
+      if (!room.referenceNumber) return;
+      if (subscriptions.current.has(room.referenceNumber)) return;
+      if (room.type === "GROUP") {
+        stompClient.subscribe(
+          `/topic/room/${room.referenceNumber}`,
+          (message) => {
+            const incoming = JSON.parse(message.body);
+
+            dispatch(refreshRooms(incoming.message));
+
+            if (incoming.files) {
+              dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
+            }
+
+            dispatch(updateMessage(incoming.message));
+          },
+        );
+      }
+
+      // subscribe to typing
+      stompClient.subscribe(
+        `/topic/typing/${room.referenceNumber}`,
+        (message) => {
+          const signedUser = store.getState().user;
+          if (!signedUser) return;
+          if (!signedUser.user?.email) return;
+          const typing = JSON.parse(message.body) as TypingDto;
+          console.log("Typing", typing);
+          const { roomRef, status, username } = typing;
+          if (signedUser.user.email === username) return;
+
+          const key = `${roomRef}-${username}`;
+          if (status === "START") {
+            dispatch(addTyping(typing));
+          } else {
+            dispatch(removeTyping(typing));
+          }
+
+          if (typingTimeouts.current.has(key)) {
+            clearTimeout(typingTimeouts.current.get(key));
+          }
+
+          const timeout = setTimeout(() => {
+            dispatch(removeTyping(typing));
+            typingTimeouts.current.delete(key);
+          }, 10000);
+
+          typingTimeouts.current.set(key, timeout);
+        },
+      );
+    });
+  }, [dispatch, rooms]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
