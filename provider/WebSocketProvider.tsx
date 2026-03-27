@@ -215,6 +215,7 @@ function WebSocketProvider({
       });
 
       const interval = setInterval(() => {
+        if (!clientRef.current?.connected) return;
         console.log("heart-beat");
         clientRef.current?.publish({
           destination: "/app/heartbeat",
@@ -296,11 +297,13 @@ function WebSocketProvider({
   }, [dispatch, rooms]);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === "visible") {
         if (clientRef.current && clientRef.current.connected) return;
 
         console.warn("Reconnecting WebSocket");
+
+        await fetchCsrfToken();
 
         if (clientRef.current) {
           clientRef.current.deactivate().then(() => {
@@ -315,7 +318,7 @@ function WebSocketProvider({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [fetchCsrfToken]);
 
   function sendPrivateMessage(recipient: string, message: Message) {
     clientRef.current?.publish({
