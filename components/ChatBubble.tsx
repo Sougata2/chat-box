@@ -2,6 +2,7 @@ import { getNameColor } from "@/lib/utils";
 import { TbChecks } from "react-icons/tb";
 import { Message } from "@/types/types";
 import { FiClock } from "react-icons/fi";
+import { TbCheck } from "react-icons/tb";
 import { format } from "date-fns";
 
 function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
@@ -69,10 +70,26 @@ function MessageBubble({ isMe, msg }: { isMe: boolean; msg: Message }) {
               )}
               {msg.status === "NOT_SENT" && <FiClock size={11} />}
               {isMe && msg.status === "SENT" && (
+                <TbCheck
+                  size={20}
+                  className="
+                    text-emerald-700
+                  "
+                />
+              )}
+              {isMe && msg.status === "DELIVERED" && (
                 <TbChecks
                   size={20}
                   className="
                     text-emerald-700
+                  "
+                />
+              )}
+              {isMe && msg.status === "READ" && (
+                <TbChecks
+                  size={20}
+                  className="
+                    text-blue-500
                   "
                 />
               )}
