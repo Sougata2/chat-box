@@ -11,7 +11,7 @@ import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
-import { setMessage, saveRoom } from "@/app/store/chatSlice";
+import { setMessage, saveRoom, updateMessage } from "@/app/store/chatSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
@@ -260,14 +260,135 @@ function MediaChat() {
     }, 1000);
   }
 
+  // async function onSubmit(values: z.infer<typeof formSchema>) {
+  //   try {
+  //     let messagePayload = {
+  //       message: values.message,
+  //       uuid: uuidv4(),
+  //       status: "NOT_SENT",
+  //       media: "TEXT",
+  //       roomRef: room?.referenceNumber,
+  //       senderId: user?.id,
+  //       senderEmail: user?.email,
+  //       senderFirstName: user?.firstName,
+  //       senderLastName: user?.lastName,
+  //       createdAt: new Date().toISOString(),
+  //     } as Message;
+
+  //     shouldPlaySendNoti.current = true;
+
+  //     if (room?.type === "GROUP") {
+  //       // put the message payload in the window
+  //       dispatch(setMessage(messagePayload));
+
+  //       // update the room list to register the new message.
+  //       dispatch(refreshRooms(messagePayload));
+
+  //       if (!room?.referenceNumber) return;
+
+  //       websocket.sendGroupMessage(room.referenceNumber, messagePayload);
+
+  //       form.setValue("message", "");
+  //       requestAnimationFrame(() => {
+  //         if (textareaRef.current) {
+  //           textareaRef.current.style.height = "44px";
+  //         }
+  //       });
+  //     } else {
+  //       let recipient;
+
+  //       if (room && !room?.referenceNumber) {
+  //         // save the new room.
+  //         const newRoomResponse = await message.post("/rooms/new-private", {
+  //           ...room,
+  //           referenceNumber: uuidv4(),
+  //         });
+  //         const newRoomData = newRoomResponse.data as Room;
+
+  //         // update the current room
+  //         dispatch(saveRoom(newRoomData));
+
+  //         // add the new room in the room list.
+  //         dispatch(addRoom(newRoomData));
+
+  //         // set the recipient after room creation
+  //         recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
+
+  //         // prepare the messsage payload
+  //         messagePayload = {
+  //           message: values.message,
+  //           uuid: uuidv4(),
+  //           status: "NOT_SENT",
+  //           media: "TEXT",
+  //           roomRef: newRoomResponse.data.referenceNumber,
+  //           senderId: user?.id,
+  //           senderEmail: user?.email,
+  //           senderFirstName: user?.firstName,
+  //           senderLastName: user?.lastName,
+  //           createdAt: new Date().toISOString(),
+  //         } as Message;
+  //       }
+
+  //       // put the message payload in the window
+  //       dispatch(setMessage(messagePayload));
+
+  //       // update the room list to register the new message.
+  //       dispatch(refreshRooms(messagePayload));
+
+  //       // set the recipient for existing room.
+  //       if (!room?.participants) return;
+  //       recipient = room?.participants.find((p) => p.id !== user?.id) as User;
+
+  //       // send the message
+  //       if (!recipient.email) return;
+  //       websocket.sendPrivateMessage(recipient.email, messagePayload);
+  //       // update the message (in the socket)
+
+  //       form.setValue("message", "");
+  //       requestAnimationFrame(() => {
+  //         if (textareaRef.current) {
+  //           textareaRef.current.style.height = "44px";
+  //         }
+  //       });
+  //     }
+  //     if (!room?.referenceNumber) return;
+  //     if (!user?.email) return;
+  //     websocket.sendTyping(room?.referenceNumber, user?.email, "STOP");
+  //   } catch (error) {
+  //     toastError(error);
+  //   }
+  // }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      let messagePayload = {
+      if (!room) return;
+      let targetRoom = { ...room };
+
+      // create new private room if not exits
+      if (room.type === "PRIVATE" && !room.referenceNumber) {
+        // save the new room.
+        const newRoomResponse = await message.post("/rooms/new-private", {
+          ...targetRoom,
+          referenceNumber: uuidv4(),
+        });
+        const newRoomData = newRoomResponse.data as Room;
+
+        // update the current room
+        dispatch(saveRoom(newRoomData));
+
+        // add the new room in the room list.
+        dispatch(addRoom(newRoomData));
+
+        targetRoom = { ...newRoomData };
+      }
+
+      // prepare the message payload
+      const messagePayload = {
         message: values.message,
         uuid: uuidv4(),
         status: "NOT_SENT",
         media: "TEXT",
-        roomRef: room?.referenceNumber,
+        roomRef: targetRoom.referenceNumber,
         senderId: user?.id,
         senderEmail: user?.email,
         senderFirstName: user?.firstName,
@@ -275,85 +396,40 @@ function MediaChat() {
         createdAt: new Date().toISOString(),
       } as Message;
 
-      shouldPlaySendNoti.current = true;
+      // put the message payload in the window
+      dispatch(setMessage(messagePayload));
 
-      if (room?.type === "GROUP") {
-        // put the message payload in the window
-        dispatch(setMessage(messagePayload));
+      // update the room list to register the new message.
+      dispatch(refreshRooms(messagePayload));
 
-        // update the room list to register the new message.
-        dispatch(refreshRooms(messagePayload));
+      // save the message
+      const messageResponse = await message.post("/messages", messagePayload);
+      const messageResponseData = messageResponse.data;
 
-        if (!room?.referenceNumber) return;
+      // update the room list to register saved message.
+      dispatch(refreshRooms(messageResponseData));
 
-        websocket.sendGroupMessage(room.referenceNumber, messagePayload);
+      // update the the message with the saved one
+      dispatch(updateMessage(messageResponseData));
 
-        form.setValue("message", "");
-        requestAnimationFrame(() => {
-          if (textareaRef.current) {
-            textareaRef.current.style.height = "44px";
-          }
-        });
-      } else {
-        let recipient;
-
-        if (room && !room?.referenceNumber) {
-          // save the new room.
-          const newRoomResponse = await message.post("/rooms/new-private", {
-            ...room,
-            referenceNumber: uuidv4(),
-          });
-          const newRoomData = newRoomResponse.data as Room;
-
-          // update the current room
-          dispatch(saveRoom(newRoomData));
-
-          // add the new room in the room list.
-          dispatch(addRoom(newRoomData));
-
-          // set the recipient after room creation
-          recipient = newRoomData.participants?.find((p) => p.id !== user?.id);
-
-          // prepare the messsage payload
-          messagePayload = {
-            message: values.message,
-            uuid: uuidv4(),
-            status: "NOT_SENT",
-            media: "TEXT",
-            roomRef: newRoomResponse.data.referenceNumber,
-            senderId: user?.id,
-            senderEmail: user?.email,
-            senderFirstName: user?.firstName,
-            senderLastName: user?.lastName,
-            createdAt: new Date().toISOString(),
-          } as Message;
-        }
-
-        // put the message payload in the window
-        dispatch(setMessage(messagePayload));
-
-        // update the room list to register the new message.
-        dispatch(refreshRooms(messagePayload));
-
-        // set the recipient for existing room.
+      if (room.type === "PRIVATE") {
         if (!room?.participants) return;
-        recipient = room?.participants.find((p) => p.id !== user?.id) as User;
-
-        // send the message
+        const recipient = room?.participants.find(
+          (p) => p.id !== user?.id,
+        ) as User;
         if (!recipient.email) return;
         websocket.sendPrivateMessage(recipient.email, messagePayload);
-        // update the message (in the socket)
-
-        form.setValue("message", "");
-        requestAnimationFrame(() => {
-          if (textareaRef.current) {
-            textareaRef.current.style.height = "44px";
-          }
-        });
+      } else {
+        if (!room?.referenceNumber) return;
+        websocket.sendGroupMessage(room.referenceNumber, messagePayload);
       }
-      if (!room?.referenceNumber) return;
-      if (!user?.email) return;
-      websocket.sendTyping(room?.referenceNumber, user?.email, "STOP");
+
+      form.setValue("message", "");
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "44px";
+        }
+      });
     } catch (error) {
       toastError(error);
     }

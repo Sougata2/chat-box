@@ -150,6 +150,9 @@ function WebSocketProvider({
       // subscribe to groups and typing
       subscriptions.current.clear();
 
+      // prevent signed to receive his own message
+      const signedUser = store.getState().user.user;
+
       Object.values(stateRooms).forEach((room) => {
         if (!room.referenceNumber) return;
 
@@ -157,7 +160,9 @@ function WebSocketProvider({
           stompClient.subscribe(
             `/topic/room/${room.referenceNumber}`,
             (message) => {
-              const incoming = JSON.parse(message.body);
+              const incoming = JSON.parse(message.body) as IncomingMessage;
+
+              if (signedUser?.email === incoming.message.senderEmail) return;
 
               dispatch(refreshRooms(incoming.message));
 
