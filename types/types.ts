@@ -1,11 +1,6 @@
 import { Client } from "@stomp/stompjs";
 
-export type Status =
-  | "DELIVERED"
-  | "NOT_DELIVERED"
-  | "NOT_SENT"
-  | "READ"
-  | "SENT";
+export type Status = "DELIVERED" | "NOT_SENT" | "READ" | "SENT";
 
 export type PresenceStatus =
   | "OFFLINE"
