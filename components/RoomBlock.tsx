@@ -1,13 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { TbCheck, TbChecks } from "react-icons/tb";
 import { MdOutlineImage } from "react-icons/md";
 import { GroupAvatar } from "./GroupAvatar";
+import { useSelector } from "react-redux";
 import { Room, User } from "@/types/types";
-import { TbCheck, TbChecks } from "react-icons/tb";
+import { RootState } from "@/app/store/store";
 import { FiClock } from "react-icons/fi";
 
 import RoomName from "./RoomName";
-import { RootState } from "@/app/store/store";
-import { useSelector } from "react-redux";
 
 function RoomBlock({
   room,
