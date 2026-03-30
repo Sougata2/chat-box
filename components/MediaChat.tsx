@@ -418,10 +418,10 @@ function MediaChat() {
           (p) => p.id !== user?.id,
         ) as User;
         if (!recipient.email) return;
-        websocket.sendPrivateMessage(recipient.email, messagePayload);
+        websocket.sendPrivateMessage(recipient.email, messageResponseData);
       } else {
         if (!room?.referenceNumber) return;
-        websocket.sendGroupMessage(room.referenceNumber, messagePayload);
+        websocket.sendGroupMessage(room.referenceNumber, messageResponseData);
       }
 
       form.setValue("message", "");
