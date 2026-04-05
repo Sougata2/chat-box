@@ -101,6 +101,6 @@ export type AcknowledgeableMessage = {
 };
 
 export type AcknowledgementDto = {
-  roomMessageMap: Map<string, AcknowledgeableMessage[]>;
-  statusMap: Map<string, Status>;
+  roomMessageMap: Record<string, AcknowledgeableMessage[]>;
+  statusMap: Record<string, Status>;
 };

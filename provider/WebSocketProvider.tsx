@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Room,
+  Status,
   Message,
   TypingDto,
   PresenceDto,
@@ -9,13 +10,12 @@ import {
   WebSocketContextType,
   AcknowledgementDto,
   AcknowledgeableMessage,
-  Status,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
+import { addFiles, updateMessage, updateMessages } from "@/app/store/chatSlice";
 import { AppDispatch, RootState, store } from "@/app/store/store";
 import { addPresence, updatePresence } from "@/app/store/presenceSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { addFiles, updateMessage } from "@/app/store/chatSlice";
 import { addTyping, removeTyping } from "@/app/store/typingSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
@@ -91,8 +91,8 @@ function WebSocketProvider({
       }
 
       const payload = {
-        roomMessageMap: pendingAcks.current,
-        statusMap: roomStatusMap,
+        roomMessageMap: Object.fromEntries(pendingAcks.current),
+        statusMap: Object.fromEntries(roomStatusMap),
       } as AcknowledgementDto;
 
       clientRef.current?.publish({
@@ -199,6 +199,52 @@ function WebSocketProvider({
             dispatch(updateMessage(incoming.message));
           },
         );
+      });
+
+      stompClient.subscribe("/user/queue/acknowledge", (message) => {
+        const acknowledgedMessages = JSON.parse(message.body) as Message[];
+
+        if (!acknowledgedMessages) return;
+        if (acknowledgedMessages.length === 0) return;
+
+        const currentRoom = store.getState().chat.room;
+
+        // create map of room -> message[]
+        const map = acknowledgedMessages.reduce(
+          (acc, curr) => {
+            if (!curr.roomRef) return acc;
+            if (!acc[curr.roomRef]) {
+              acc[curr.roomRef] = [];
+            }
+            acc[curr.roomRef].push(curr);
+            return acc;
+          },
+          {} as Record<string, Message[]>,
+        );
+
+        if (currentRoom?.referenceNumber && map[currentRoom.referenceNumber]) {
+          const roomEntities = store.getState().rooms.entities;
+          const lastMessage =
+            roomEntities[currentRoom.referenceNumber].lastMessage;
+          console.log(lastMessage);
+
+          const currentRoomAcknowledgedMessages =
+            map[currentRoom.referenceNumber];
+
+          console.log(currentRoomAcknowledgedMessages);
+
+          const matchedLastMessage = currentRoomAcknowledgedMessages.find(
+            (m) => m.uuid === lastMessage?.uuid,
+          ) as Message;
+
+          console.log(matchedLastMessage);
+
+          if (matchedLastMessage) {
+            dispatch(refreshRooms(matchedLastMessage));
+          }
+
+          dispatch(updateMessages(currentRoomAcknowledgedMessages));
+        }
       });
 
       // prevents reconnection

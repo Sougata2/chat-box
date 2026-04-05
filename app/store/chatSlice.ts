@@ -33,6 +33,9 @@ const chatSlice = createSlice({
       if (state.room?.referenceNumber !== action.payload.roomRef) return;
       messageAdapter.upsertOne(state.messages, action.payload);
     },
+    updateMessages(state, action: PayloadAction<Message[]>) {
+      messageAdapter.upsertMany(state.messages, action.payload);
+    },
     resetChat(state) {
       state.room = null;
       state.files = {};
@@ -69,6 +72,7 @@ export const {
   setMessage,
   setMessages,
   updateMessage,
+  updateMessages,
   addFiles,
   setFiles,
 } = chatSlice.actions;
