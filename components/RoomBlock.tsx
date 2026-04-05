@@ -1,13 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { TbCheck, TbChecks } from "react-icons/tb";
 import { MdOutlineImage } from "react-icons/md";
 import { GroupAvatar } from "./GroupAvatar";
+import { useSelector } from "react-redux";
 import { Room, User } from "@/types/types";
-import { TbChecks } from "react-icons/tb";
+import { RootState } from "@/app/store/store";
 import { FiClock } from "react-icons/fi";
 
 import RoomName from "./RoomName";
-import { RootState } from "@/app/store/store";
-import { useSelector } from "react-redux";
 
 function RoomBlock({
   room,
@@ -26,6 +26,8 @@ function RoomBlock({
   const otherParticipant = room.participants.find(
     (p) => p.id !== loggedInUser.id,
   );
+
+  const isMe = room.lastMessage?.senderEmail === loggedInUser.email;
   if (!room.referenceNumber) return null;
 
   return (
@@ -45,12 +47,23 @@ function RoomBlock({
           <RoomName room={room} user={loggedInUser} />
         </div>
         <div className="flex items-center gap-1 text-[13px] font-medium text-slate-500 min-w-0 overflow-hidden">
-          {room.lastMessage?.status === "NOT_SENT" && (
-            <FiClock size={11} className="shrink-0" />
-          )}
+          {isMe && (
+            <>
+              {room.lastMessage?.status === "NOT_SENT" && (
+                <FiClock size={11} className="shrink-0" />
+              )}
 
-          {room.lastMessage?.status === "SENT" && (
-            <TbChecks size={16} className="shrink-0 text-slate-500" />
+              {room.lastMessage?.status === "DELIVERED" && (
+                <TbChecks size={16} className="shrink-0 text-slate-500" />
+              )}
+
+              {room.lastMessage?.status === "SENT" && (
+                <TbCheck size={16} className="shrink-0 text-slate-500" />
+              )}
+              {room.lastMessage?.status === "READ" && (
+                <TbChecks size={16} className="shrink-0 text-blue-500" />
+              )}
+            </>
           )}
 
           <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap truncate flex items-center gap-1">

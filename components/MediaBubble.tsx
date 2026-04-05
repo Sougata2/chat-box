@@ -12,7 +12,7 @@ import { getNameColor } from "@/lib/utils";
 import { useSelector } from "react-redux";
 import { toastError } from "./toastError";
 import { RootState } from "@/app/store/store";
-import { TbChecks } from "react-icons/tb";
+import { TbCheck, TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
 import { format } from "date-fns";
 
@@ -252,11 +252,28 @@ function MediaBubble({
               "hh:mm aaa",
             )}
             {!msg?.createdAt && <FiClock size={11} />}
-            {isMe && msg?.createdAt && (
+            {msg.status === "NOT_SENT" && <FiClock size={11} />}
+            {isMe && msg.status === "SENT" && (
+              <TbCheck
+                size={20}
+                className="
+                text-emerald-700
+                "
+              />
+            )}
+            {isMe && msg.status === "DELIVERED" && (
               <TbChecks
                 size={20}
                 className="
-                  text-emerald-700
+                text-emerald-700
+                "
+              />
+            )}
+            {isMe && msg.status === "READ" && (
+              <TbChecks
+                size={20}
+                className="
+                text-blue-500
                 "
               />
             )}
