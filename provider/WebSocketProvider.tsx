@@ -7,6 +7,9 @@ import {
   TypingStatus,
   IncomingMessage,
   WebSocketContextType,
+  AcknowledgementDto,
+  AcknowledgeableMessage,
+  Status,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { AppDispatch, RootState, store } from "@/app/store/store";
@@ -49,10 +52,61 @@ function WebSocketProvider({
   const debouncedTypingRef = useRef<DebouncedFunc<
     (reference: string, username: string, status: TypingStatus) => void
   > | null>(null);
+  const pendingAcks = useRef<Map<string, AcknowledgeableMessage[]>>(new Map());
+  const ackTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const rooms = useSelector((state: RootState) => state.rooms.entities);
 
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
+
+  const sendAcknowledgement = useCallback((message: Message) => {
+    if (!message.roomRef) return;
+    let pendingAckMsgs = pendingAcks.current.get(message.roomRef) as
+      | AcknowledgeableMessage[]
+      | undefined;
+
+    if (!pendingAckMsgs) pendingAckMsgs = [] as AcknowledgeableMessage[];
+    pendingAckMsgs.push({
+      id: message.id,
+      senderEmail: message.senderEmail,
+      uuid: message.uuid,
+    } as AcknowledgeableMessage);
+    pendingAcks.current.set(message.roomRef, pendingAckMsgs);
+
+    // if timer exists -> clear it
+    if (ackTimeouts.current.has(message.roomRef)) {
+      clearTimeout(ackTimeouts.current.get(message.roomRef));
+    }
+
+    const timeout = setTimeout(() => {
+      const roomStatusMap = new Map<string, Status>();
+      const activeRoomRef = store.getState().chat.room?.referenceNumber;
+
+      for (const [roomRef] of pendingAcks.current) {
+        const isInView = document.visibilityState === "visible";
+        const isRoomActive = activeRoomRef
+          ? roomRef === activeRoomRef && isInView
+          : false;
+        roomStatusMap.set(roomRef, isRoomActive ? "READ" : "DELIVERED");
+      }
+
+      const payload = {
+        roomMessageMap: pendingAcks.current,
+        statusMap: roomStatusMap,
+      } as AcknowledgementDto;
+
+      clientRef.current?.publish({
+        destination: "/app/post.acknowledge",
+        body: JSON.stringify(payload),
+      });
+
+      // clean up
+      ackTimeouts.current.clear();
+      pendingAcks.current.clear();
+    }, 2000);
+
+    ackTimeouts.current.set(message.roomRef, timeout);
+  }, []);
 
   const fetchCsrfToken = useCallback(async () => {
     try {
@@ -122,6 +176,8 @@ function WebSocketProvider({
           dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
         }
         dispatch(updateMessage(incoming.message));
+
+        sendAcknowledgement(incoming.message);
       });
 
       stompClient.subscribe("/user/queue/rooms", (message) => {
@@ -171,6 +227,8 @@ function WebSocketProvider({
               }
 
               dispatch(updateMessage(incoming.message));
+
+              sendAcknowledgement(incoming.message);
             },
           );
         }
@@ -241,7 +299,7 @@ function WebSocketProvider({
       }
       stompClient.deactivate();
     };
-  }, [csrfData, dispatch, token]);
+  }, [csrfData, dispatch, sendAcknowledgement, token]);
 
   useEffect(() => {
     const stompClient = clientRef.current;

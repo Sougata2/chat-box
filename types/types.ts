@@ -27,6 +27,7 @@ export type User = {
 };
 
 export type Message = {
+  id?: number;
   message: string | null;
   uuid: string;
   status: Status | null;
@@ -91,4 +92,15 @@ export type WebSocketContextType = {
     username: string,
     status: TypingStatus,
   ) => void;
+};
+
+export type AcknowledgeableMessage = {
+  id: number;
+  uuid: string;
+  senderEmail: string;
+};
+
+export type AcknowledgementDto = {
+  roomMessageMap: Map<string, AcknowledgeableMessage[]>;
+  statusMap: Map<string, Status>;
 };
