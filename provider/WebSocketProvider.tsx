@@ -108,10 +108,69 @@ function WebSocketProvider({
     ackTimeouts.current.set(message.roomRef, timeout);
   }, []);
 
+  const sendAcknowledgementImmediately = useCallback(
+    async (messages: Message[]) => {
+      if (messages && messages.length === 0) return;
+
+      const roomMessageMap = {} as Record<string, AcknowledgeableMessage[]>;
+
+      messages.forEach((message) => {
+        if (message.roomRef) {
+          let acknowledgableMessages = [] as AcknowledgeableMessage[];
+          if (roomMessageMap[message.roomRef]) {
+            acknowledgableMessages = roomMessageMap[message.roomRef];
+          } else {
+            roomMessageMap[message.roomRef] = acknowledgableMessages;
+          }
+
+          acknowledgableMessages.push({
+            id: message.id,
+            uuid: message.uuid,
+            senderEmail: message.senderEmail,
+          } as AcknowledgeableMessage);
+        }
+      });
+
+      const roomStatusMap = new Map<string, Status>();
+      const activeRoomRef = store.getState().chat.room?.referenceNumber;
+
+      for (const [roomRef] of Object.entries(roomMessageMap)) {
+        const isInView = document.visibilityState === "visible";
+        const isRoomActive = activeRoomRef
+          ? roomRef === activeRoomRef && isInView
+          : false;
+        roomStatusMap.set(roomRef, isRoomActive ? "READ" : "DELIVERED");
+      }
+
+      const payload = {
+        roomMessageMap: roomMessageMap,
+        statusMap: Object.fromEntries(roomStatusMap),
+      } as AcknowledgementDto;
+
+      clientRef.current?.publish({
+        destination: "/app/post.acknowledge",
+        body: JSON.stringify(payload),
+      });
+    },
+    [],
+  );
+
   const fetchCsrfToken = useCallback(async () => {
     try {
       const response = await chat.get("/csrf/token");
       setCsrfData({ ...response.data } as CsrfData);
+    } catch (error) {
+      toastError(error);
+    }
+  }, []);
+
+  const fetchPendingMessages = useCallback(async (status: Status) => {
+    try {
+      const response = await msgClient.get(
+        `/messages/pending-message/${status}`,
+      );
+      const pendingMessages = response.data as Message[];
+      return pendingMessages;
     } catch (error) {
       toastError(error);
     }
@@ -157,6 +216,18 @@ function WebSocketProvider({
     });
 
     stompClient.onConnect = () => {
+      (async () => {
+        const sentMessages = (await fetchPendingMessages("SENT")) as Message[];
+        // const deliveredMessages = (await fetchPendingMessages(
+        //   "DELIVERED",
+        // )) as Message[];
+
+        console.log("SENT : ", sentMessages);
+        await sendAcknowledgementImmediately(sentMessages);
+        // sent message to acknowledged directly.
+        // console.log("RECEIVED : ", deliveredMessages);
+      })();
+
       stompClient.subscribe("/user/queue/messages", (message) => {
         const incoming = JSON.parse(message.body) as IncomingMessage;
         if (!incoming.message.roomRef) return;
@@ -345,7 +416,14 @@ function WebSocketProvider({
       }
       stompClient.deactivate();
     };
-  }, [csrfData, dispatch, sendAcknowledgement, token]);
+  }, [
+    token,
+    dispatch,
+    csrfData,
+    sendAcknowledgement,
+    fetchPendingMessages,
+    sendAcknowledgementImmediately,
+  ]);
 
   useEffect(() => {
     const stompClient = clientRef.current;
