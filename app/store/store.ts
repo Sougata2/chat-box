@@ -12,9 +12,9 @@ import pageReducer from "@/app/store/pageSlice";
 export const store = configureStore({
   reducer: {
     user: userReducer,
-    rooms: roomReducer,
     chat: chatReducer,
     page: pageReducer,
+    rooms: roomReducer,
     typing: typingReducer,
     presence: presenceReducer,
     participants: participantReducer,
