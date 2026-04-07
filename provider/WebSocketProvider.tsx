@@ -18,6 +18,7 @@ import { addPresence, updatePresence } from "@/app/store/presenceSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { addTyping, removeTyping } from "@/app/store/typingSlice";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
+import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
 import type { DebouncedFunc } from "lodash";
 import { toastError } from "@/components/toastError";
@@ -220,11 +221,12 @@ function WebSocketProvider({
     stompClient.onConnect = () => {
       (async () => {
         const sentMessages = (await fetchPendingMessages("SENT")) as Message[];
-        // const deliveredMessages = (await fetchPendingMessages(
-        //   "DELIVERED",
-        // )) as Message[];
+        const deliveredMessages = (await fetchPendingMessages(
+          "DELIVERED",
+        )) as Message[];
 
-        console.log("SENT : ", sentMessages);
+        dispatch(pendingMessageActions.addMany(deliveredMessages));
+
         await sendAcknowledgementImmediately(sentMessages);
         // sent message to acknowledged directly.
         // console.log("RECEIVED : ", deliveredMessages);
@@ -270,6 +272,8 @@ function WebSocketProvider({
               dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
             }
             dispatch(updateMessage(incoming.message));
+
+            sendAcknowledgement(incoming.message);
           },
         );
       });

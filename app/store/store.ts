@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 
+import pendingMessageReducer from "@/app/store/pendingMessageSlice";
 import participantReducer from "@/app/store/participantSlice";
 import presenceReducer from "@/app/store/presenceSlice";
 import typingReducer from "@/app/store/typingSlice";
@@ -17,6 +18,7 @@ export const store = configureStore({
     typing: typingReducer,
     presence: presenceReducer,
     participants: participantReducer,
+    pendingMessages: pendingMessageReducer,
   },
 });
 
