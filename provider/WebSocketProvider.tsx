@@ -68,8 +68,9 @@ function WebSocketProvider({
     if (!pendingAckMsgs) pendingAckMsgs = [] as AcknowledgeableMessage[];
     pendingAckMsgs.push({
       id: message.id,
-      senderEmail: message.senderEmail,
       uuid: message.uuid,
+      createdAt: message.createdAt,
+      senderEmail: message.senderEmail,
     } as AcknowledgeableMessage);
     pendingAcks.current.set(message.roomRef, pendingAckMsgs);
 
@@ -126,6 +127,7 @@ function WebSocketProvider({
           acknowledgableMessages.push({
             id: message.id,
             uuid: message.uuid,
+            createdAt: message.createdAt,
             senderEmail: message.senderEmail,
           } as AcknowledgeableMessage);
         }
