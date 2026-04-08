@@ -39,6 +39,8 @@ import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
 import TypingIndicator from "./TypingIndicator";
+import { visibleMessageActions } from "@/app/store/visibleMessageSlice";
+import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -93,6 +95,37 @@ function MediaChat() {
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
     shouldAutoScroll.current = nearBottom;
   };
+
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    if (messages.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.getAttribute("data-id");
+            if (messageId) {
+              dispatch(visibleMessageActions.insert(messageId));
+              dispatch(pendingMessageActions.remove(messageId));
+            }
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0.6,
+      },
+    );
+
+    const element = container.querySelectorAll("[data-id]");
+    element.forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [dispatch, messages]);
 
   useEffect(() => {
     if (shouldAutoScroll.current) {
@@ -418,7 +451,7 @@ function MediaChat() {
                   {message.message}
                 </div>
               ) : (
-                <>
+                <div data-id={message.uuid}>
                   {message.media === "TEXT" && (
                     <MessageBubble isMe={isMe} msg={message} />
                   )}
@@ -434,7 +467,7 @@ function MediaChat() {
                     // <MediaBubble isMe={isMe} media={} msg={msg} />
                     <div>Document</div>
                   )}
-                </>
+                </div>
               )}
             </div>
           );

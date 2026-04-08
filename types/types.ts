@@ -97,6 +97,7 @@ export type WebSocketContextType = {
 export type AcknowledgeableMessage = {
   id: number;
   uuid: string;
+  status: Status;
   createdAt: string;
   senderEmail: string;
 };

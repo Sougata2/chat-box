@@ -7,7 +7,6 @@ import {
   PresenceDto,
   TypingStatus,
   IncomingMessage,
-  AcknowledgementDto,
   WebSocketContextType,
   AcknowledgeableMessage,
 } from "@/types/types";
@@ -53,109 +52,89 @@ function WebSocketProvider({
   const debouncedTypingRef = useRef<DebouncedFunc<
     (reference: string, username: string, status: TypingStatus) => void
   > | null>(null);
-  const pendingAcks = useRef<Map<string, AcknowledgeableMessage[]>>(new Map());
-  const ackTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const pendingAcks = useRef<Message[]>([]);
+  const ackTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const rooms = useSelector((state: RootState) => state.rooms.entities);
 
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
 
-  const sendAcknowledgement = useCallback((message: Message) => {
-    if (!message.roomRef) return;
-    let pendingAckMsgs = pendingAcks.current.get(message.roomRef) as
-      | AcknowledgeableMessage[]
-      | undefined;
+  const sendAcknowledgement = useCallback(
+    (message: Message) => {
+      if (!message.roomRef) return;
 
-    if (!pendingAckMsgs) pendingAckMsgs = [] as AcknowledgeableMessage[];
-    pendingAckMsgs.push({
-      id: message.id,
-      uuid: message.uuid,
-      createdAt: message.createdAt,
-      senderEmail: message.senderEmail,
-    } as AcknowledgeableMessage);
-    pendingAcks.current.set(message.roomRef, pendingAckMsgs);
+      const visibleMessages = store.getState().visibleMessage.messages;
+      const acknowledgedStatus = visibleMessages.has(message.uuid)
+        ? "READ"
+        : "DELIVERED";
 
-    // if timer exists -> clear it
-    if (ackTimeouts.current.has(message.roomRef)) {
-      clearTimeout(ackTimeouts.current.get(message.roomRef));
-    }
+      const acknowledgedMessage = {
+        ...message,
+        status: acknowledgedStatus,
+      } as Message;
 
-    const timeout = setTimeout(() => {
-      const roomStatusMap = new Map<string, Status>();
-      const activeRoomRef = store.getState().chat.room?.referenceNumber;
+      if (acknowledgedStatus === "DELIVERED")
+        dispatch(pendingMessageActions.addOne(acknowledgedMessage));
 
-      for (const [roomRef] of pendingAcks.current) {
-        const isInView = document.visibilityState === "visible";
-        const isRoomActive = activeRoomRef
-          ? roomRef === activeRoomRef && isInView
-          : false;
-        roomStatusMap.set(roomRef, isRoomActive ? "READ" : "DELIVERED");
+      pendingAcks.current.push({ ...message, status: acknowledgedStatus });
+
+      if (ackTimeout.current) {
+        clearTimeout(ackTimeout.current);
       }
 
-      const payload = {
-        roomMessageMap: Object.fromEntries(pendingAcks.current),
-        statusMap: Object.fromEntries(roomStatusMap),
-      } as AcknowledgementDto;
+      const timeout = setTimeout(() => {
+        const payload = pendingAcks.current.map((m) => {
+          return {
+            id: m.id,
+            uuid: m.uuid,
+            status: m.status,
+            createdAt: m.createdAt,
+            senderEmail: m.senderEmail,
+          } as AcknowledgeableMessage;
+        });
+        pendingAcks.current = [] as Message[];
 
-      clientRef.current?.publish({
-        destination: "/app/post.acknowledge",
-        body: JSON.stringify(payload),
-      });
+        clientRef.current?.publish({
+          destination: "/app/post.acknowledge",
+          body: JSON.stringify(payload),
+        });
 
-      // clean up
-      ackTimeouts.current.clear();
-      pendingAcks.current.clear();
-    }, 2000);
+        ackTimeout.current = null;
+      }, 2000);
 
-    ackTimeouts.current.set(message.roomRef, timeout);
-  }, []);
+      ackTimeout.current = timeout;
+    },
+    [dispatch],
+  );
 
   const sendAcknowledgementImmediately = useCallback(
-    async (messages: Message[]) => {
+    (messages: Message[]) => {
       if (messages && messages.length === 0) return;
-
-      const roomMessageMap = {} as Record<string, AcknowledgeableMessage[]>;
-
-      messages.forEach((message) => {
-        if (message.roomRef) {
-          let acknowledgableMessages = [] as AcknowledgeableMessage[];
-          if (roomMessageMap[message.roomRef]) {
-            acknowledgableMessages = roomMessageMap[message.roomRef];
-          } else {
-            roomMessageMap[message.roomRef] = acknowledgableMessages;
-          }
-
-          acknowledgableMessages.push({
-            id: message.id,
-            uuid: message.uuid,
-            createdAt: message.createdAt,
-            senderEmail: message.senderEmail,
-          } as AcknowledgeableMessage);
-        }
+      const visibleMessages = store.getState().visibleMessage.messages;
+      const acknowledgedMessages = [] as Message[];
+      const payload = messages.map((m) => {
+        const acknowledgedStatus = visibleMessages.has(m.uuid)
+          ? "READ"
+          : "DELIVERED";
+        if (acknowledgedStatus === "DELIVERED")
+          acknowledgedMessages.push({ ...m, status: acknowledgedStatus });
+        return {
+          id: m.id,
+          uuid: m.uuid,
+          createdAt: m.createdAt,
+          senderEmail: m.senderEmail,
+          status: acknowledgedStatus,
+        } as AcknowledgeableMessage;
       });
 
-      const roomStatusMap = new Map<string, Status>();
-      const activeRoomRef = store.getState().chat.room?.referenceNumber;
-
-      for (const [roomRef] of Object.entries(roomMessageMap)) {
-        const isInView = document.visibilityState === "visible";
-        const isRoomActive = activeRoomRef
-          ? roomRef === activeRoomRef && isInView
-          : false;
-        roomStatusMap.set(roomRef, isRoomActive ? "READ" : "DELIVERED");
-      }
-
-      const payload = {
-        roomMessageMap: roomMessageMap,
-        statusMap: Object.fromEntries(roomStatusMap),
-      } as AcknowledgementDto;
+      dispatch(pendingMessageActions.addMany(acknowledgedMessages));
 
       clientRef.current?.publish({
         destination: "/app/post.acknowledge",
         body: JSON.stringify(payload),
       });
     },
-    [],
+    [dispatch],
   );
 
   const fetchCsrfToken = useCallback(async () => {

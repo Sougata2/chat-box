@@ -33,7 +33,25 @@ const pendingMessageSlice = createSlice({
         addMessageToState(state, message);
       });
     },
-    // TODO: REMOVE READ MESSAGES FROM THE STATE.
+    remove(state, action: PayloadAction<string>) {
+      const messageUuid = action.payload;
+
+      const message = state.uuidMessageMap[messageUuid];
+
+      if (!state.uuidMessageMap[message.uuid]) return;
+      delete state.uuidMessageMap[message.uuid];
+
+      if (!message.roomRef) return;
+
+      const messages = state.roomMessageMap[message.roomRef];
+      state.roomMessageMap[message.roomRef] = messages.filter(
+        (m) => m.uuid !== message.uuid,
+      );
+
+      if (state.roomMessageMap[message.roomRef].length === 0) {
+        delete state.roomMessageMap[message.roomRef];
+      }
+    },
   },
 });
 
