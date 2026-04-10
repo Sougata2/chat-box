@@ -37,6 +37,7 @@ const pendingMessageSlice = createSlice({
       const messageUuid = action.payload;
 
       const message = state.uuidMessageMap[messageUuid];
+      if (!message) return;
 
       if (!state.uuidMessageMap[message.uuid]) return;
       delete state.uuidMessageMap[message.uuid];

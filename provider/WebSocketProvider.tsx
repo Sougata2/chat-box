@@ -8,7 +8,6 @@ import {
   TypingStatus,
   IncomingMessage,
   WebSocketContextType,
-  AcknowledgeableMessage,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import { addFiles, updateMessage, updateMessages } from "@/app/store/chatSlice";
@@ -64,7 +63,7 @@ function WebSocketProvider({
       if (!message.roomRef) return;
 
       const visibleMessages = store.getState().visibleMessage.messages;
-      const acknowledgedStatus = visibleMessages.has(message.uuid)
+      const acknowledgedStatus = visibleMessages[message.uuid]
         ? "READ"
         : "DELIVERED";
 
@@ -83,20 +82,12 @@ function WebSocketProvider({
       }
 
       const timeout = setTimeout(() => {
-        const payload = pendingAcks.current.map((m) => {
-          return {
-            id: m.id,
-            uuid: m.uuid,
-            status: m.status,
-            createdAt: m.createdAt,
-            senderEmail: m.senderEmail,
-          } as AcknowledgeableMessage;
-        });
+        const payload = [...pendingAcks.current] as Message[];
         pendingAcks.current = [] as Message[];
 
         clientRef.current?.publish({
           destination: "/app/post.acknowledge",
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ acknowledgeableMessages: payload }),
         });
 
         ackTimeout.current = null;
@@ -113,25 +104,22 @@ function WebSocketProvider({
       const visibleMessages = store.getState().visibleMessage.messages;
       const acknowledgedMessages = [] as Message[];
       const payload = messages.map((m) => {
-        const acknowledgedStatus = visibleMessages.has(m.uuid)
+        const acknowledgedStatus = visibleMessages[m.uuid]
           ? "READ"
           : "DELIVERED";
         if (acknowledgedStatus === "DELIVERED")
           acknowledgedMessages.push({ ...m, status: acknowledgedStatus });
         return {
-          id: m.id,
-          uuid: m.uuid,
-          createdAt: m.createdAt,
-          senderEmail: m.senderEmail,
+          ...m,
           status: acknowledgedStatus,
-        } as AcknowledgeableMessage;
-      });
+        };
+      }) as Message[];
 
       dispatch(pendingMessageActions.addMany(acknowledgedMessages));
 
       clientRef.current?.publish({
         destination: "/app/post.acknowledge",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ acknowledgeableMessages: payload }),
       });
     },
     [dispatch],

@@ -1,11 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type VisibleMessageState = {
-  messages: Set<string>;
+  messages: Record<string, boolean>;
 };
 
 const initialState: VisibleMessageState = {
-  messages: new Set(),
+  messages: {},
 };
 
 const visibleMessageSlice = createSlice({
@@ -13,13 +13,14 @@ const visibleMessageSlice = createSlice({
   name: "visibleMessage",
   reducers: {
     insert(state, action: PayloadAction<string>) {
-      state.messages.add(action.payload);
+      if (state.messages[action.payload]) return;
+      state.messages[action.payload] = true;
     },
     remove(state, action: PayloadAction<string>) {
-      state.messages.delete(action.payload);
+      state.messages[action.payload] = false;
     },
     reset(state) {
-      state.messages.clear();
+      state.messages = {};
     },
   },
 });

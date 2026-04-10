@@ -93,16 +93,3 @@ export type WebSocketContextType = {
     status: TypingStatus,
   ) => void;
 };
-
-export type AcknowledgeableMessage = {
-  id: number;
-  uuid: string;
-  status: Status;
-  createdAt: string;
-  senderEmail: string;
-};
-
-export type AcknowledgementDto = {
-  roomMessageMap: Record<string, AcknowledgeableMessage[]>;
-  statusMap: Record<string, Status>;
-};
