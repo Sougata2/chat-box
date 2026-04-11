@@ -62,20 +62,14 @@ function WebSocketProvider({
     (message: Message) => {
       if (!message.roomRef) return;
 
-      const visibleMessages = store.getState().visibleMessage.messages;
-      const acknowledgedStatus = visibleMessages[message.uuid]
-        ? "READ"
-        : "DELIVERED";
-
       const acknowledgedMessage = {
         ...message,
-        status: acknowledgedStatus,
+        status: "DELIVERED",
       } as Message;
 
-      if (acknowledgedStatus === "DELIVERED")
-        dispatch(pendingMessageActions.addOne(acknowledgedMessage));
+      dispatch(pendingMessageActions.addOne(acknowledgedMessage));
 
-      pendingAcks.current.push({ ...message, status: acknowledgedStatus });
+      pendingAcks.current.push({ ...message, status: "DELIVERED" });
 
       if (ackTimeout.current) {
         clearTimeout(ackTimeout.current);
@@ -101,17 +95,12 @@ function WebSocketProvider({
   const sendAcknowledgementImmediately = useCallback(
     (messages: Message[]) => {
       if (messages && messages.length === 0) return;
-      const visibleMessages = store.getState().visibleMessage.messages;
       const acknowledgedMessages = [] as Message[];
       const payload = messages.map((m) => {
-        const acknowledgedStatus = visibleMessages[m.uuid]
-          ? "READ"
-          : "DELIVERED";
-        if (acknowledgedStatus === "DELIVERED")
-          acknowledgedMessages.push({ ...m, status: acknowledgedStatus });
+        acknowledgedMessages.push({ ...m, status: "DELIVERED" });
         return {
           ...m,
-          status: acknowledgedStatus,
+          status: "DELIVERED",
         };
       }) as Message[];
 
@@ -194,7 +183,7 @@ function WebSocketProvider({
 
         dispatch(pendingMessageActions.addMany(deliveredMessages));
 
-        await sendAcknowledgementImmediately(sentMessages);
+        sendAcknowledgementImmediately(sentMessages);
         // sent message to acknowledged directly.
         // console.log("RECEIVED : ", deliveredMessages);
       })();
@@ -520,6 +509,16 @@ function WebSocketProvider({
     }
   }
 
+  function sendReadAcknowledgement(messages: Message[]) {
+    if (!clientRef.current?.connected) return;
+    if (messages.length <= 0) return;
+
+    clientRef.current.publish({
+      destination: "/app/post.acknowledge",
+      body: JSON.stringify({ acknowledgeableMessages: messages }),
+    });
+  }
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -528,6 +527,7 @@ function WebSocketProvider({
         postGroup,
         sendGroupMessage,
         sendTyping,
+        sendReadAcknowledgement,
       }}
     >
       {children}

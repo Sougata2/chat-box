@@ -20,6 +20,28 @@ function addMessageToState(state: PendingMessagesState, message: Message) {
   state.roomMessageMap[message.roomRef].push(message);
 }
 
+function removeMessageFromState(
+  state: PendingMessagesState,
+  messageUuid: string,
+) {
+  const message = state.uuidMessageMap[messageUuid];
+  if (!message) return;
+
+  if (!state.uuidMessageMap[message.uuid]) return;
+  delete state.uuidMessageMap[message.uuid];
+
+  if (!message.roomRef) return;
+
+  const messages = state.roomMessageMap[message.roomRef];
+  state.roomMessageMap[message.roomRef] = messages.filter(
+    (m) => m.uuid !== message.uuid,
+  );
+
+  if (state.roomMessageMap[message.roomRef].length === 0) {
+    delete state.roomMessageMap[message.roomRef];
+  }
+}
+
 const pendingMessageSlice = createSlice({
   initialState,
   name: "pendingMessages",
@@ -34,24 +56,13 @@ const pendingMessageSlice = createSlice({
       });
     },
     remove(state, action: PayloadAction<string>) {
-      const messageUuid = action.payload;
+      removeMessageFromState(state, action.payload);
+    },
 
-      const message = state.uuidMessageMap[messageUuid];
-      if (!message) return;
-
-      if (!state.uuidMessageMap[message.uuid]) return;
-      delete state.uuidMessageMap[message.uuid];
-
-      if (!message.roomRef) return;
-
-      const messages = state.roomMessageMap[message.roomRef];
-      state.roomMessageMap[message.roomRef] = messages.filter(
-        (m) => m.uuid !== message.uuid,
-      );
-
-      if (state.roomMessageMap[message.roomRef].length === 0) {
-        delete state.roomMessageMap[message.roomRef];
-      }
+    removeAll(state, action: PayloadAction<string[]>) {
+      action.payload.forEach((messageUuid) => {
+        removeMessageFromState(state, messageUuid);
+      });
     },
   },
 });

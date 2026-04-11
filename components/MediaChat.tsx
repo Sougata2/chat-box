@@ -60,9 +60,14 @@ function MediaChat() {
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingReadAcksMap = useRef<Map<string, Message>>(new Map());
+  const readAckTimeout = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
 
   const messages = useSelector(messageSelectors.selectAll);
+  const messageEntities = useSelector(
+    (state: RootState) => state.chat.messages.entities,
+  );
   const user = useSelector((state: RootState) => state.user.user);
   const room = useSelector((state: RootState) => state.chat.room);
   const files = useSelector((state: RootState) => state.chat.files);
@@ -108,7 +113,35 @@ function MediaChat() {
             const messageId = entry.target.getAttribute("data-id");
             if (messageId) {
               dispatch(visibleMessageActions.insert(messageId));
-              dispatch(pendingMessageActions.remove(messageId));
+
+              const pendingMsg = messageEntities[messageId];
+
+              if (!pendingMsg) return;
+              if (pendingMsg.senderEmail === user?.email) return;
+
+              if (pendingMsg.status === "READ") return;
+              if (pendingReadAcksMap.current.has(pendingMsg.uuid)) return;
+              pendingReadAcksMap.current.set(pendingMsg.uuid, {
+                ...pendingMsg,
+                status: "READ",
+              });
+
+              if (readAckTimeout.current) {
+                clearTimeout(readAckTimeout.current);
+              }
+
+              readAckTimeout.current = setTimeout(() => {
+                const payload = Array.from(pendingReadAcksMap.current.values());
+
+                websocket.sendReadAcknowledgement(payload);
+
+                pendingMessageActions.removeAll(
+                  Array.from(pendingReadAcksMap.current.keys()),
+                );
+                pendingReadAcksMap.current.clear();
+
+                readAckTimeout.current = null;
+              }, 1000);
             }
           }
         });
@@ -125,7 +158,7 @@ function MediaChat() {
     return () => {
       observer.disconnect();
     };
-  }, [dispatch, messages]);
+  }, [dispatch, messageEntities, messages, user, websocket]);
 
   useEffect(() => {
     if (shouldAutoScroll.current) {
