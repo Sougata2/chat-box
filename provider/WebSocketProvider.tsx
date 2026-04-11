@@ -61,6 +61,7 @@ function WebSocketProvider({
   const sendAcknowledgement = useCallback(
     (message: Message) => {
       if (!message.roomRef) return;
+      if (message.status === "SENT") return;
 
       const acknowledgedMessage = {
         ...message,
