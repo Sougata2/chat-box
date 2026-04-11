@@ -12,7 +12,6 @@ import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
-import { visibleMessageActions } from "@/app/store/visibleMessageSlice";
 import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
@@ -112,8 +111,6 @@ function MediaChat() {
           if (entry.isIntersecting) {
             const messageId = entry.target.getAttribute("data-id");
             if (messageId) {
-              dispatch(visibleMessageActions.insert(messageId));
-
               const pendingMsg = messageEntities[messageId];
 
               if (!pendingMsg) return;
