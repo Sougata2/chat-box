@@ -12,6 +12,8 @@ import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
+import { visibleMessageActions } from "@/app/store/visibleMessageSlice";
+import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
@@ -34,13 +36,11 @@ import { Input } from "./ui/input";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import TypingIndicator from "./TypingIndicator";
 import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
-import TypingIndicator from "./TypingIndicator";
-import { visibleMessageActions } from "@/app/store/visibleMessageSlice";
-import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
