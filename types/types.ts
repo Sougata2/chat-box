@@ -92,5 +92,5 @@ export type WebSocketContextType = {
     username: string,
     status: TypingStatus,
   ) => void;
-  sendReadAcknowledgement: (messages: Message[]) => void;
+  sendAcknowledgement: (message: Message, status: Status) => void;
 };

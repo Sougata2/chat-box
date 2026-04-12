@@ -37,6 +37,13 @@ const defaultCsrfData = {
   token: null,
 } as CsrfData;
 
+const statusPriority: Record<Status, number> = {
+  NOT_SENT: 0,
+  SENT: 1,
+  DELIVERED: 2,
+  READ: 3,
+};
+
 function WebSocketProvider({
   token,
   children,
@@ -51,7 +58,7 @@ function WebSocketProvider({
   const debouncedTypingRef = useRef<DebouncedFunc<
     (reference: string, username: string, status: TypingStatus) => void
   > | null>(null);
-  const pendingAcks = useRef<Message[]>([]);
+  const pendingAcks = useRef<Map<string, Message>>(new Map());
   const ackTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const rooms = useSelector((state: RootState) => state.rooms.entities);
@@ -59,26 +66,35 @@ function WebSocketProvider({
   const [csrfData, setCsrfData] = useState<CsrfData>(defaultCsrfData);
 
   const sendAcknowledgement = useCallback(
-    (message: Message) => {
+    (message: Message, acknowledgedStatus: Status = "DELIVERED") => {
       if (!message.roomRef) return;
-      if (message.status === "READ") return;
+
+      const existing = pendingAcks.current.get(message.uuid);
+      if (
+        existing &&
+        existing.status &&
+        statusPriority[existing.status] >= statusPriority[acknowledgedStatus]
+      ) {
+        return;
+      }
 
       const acknowledgedMessage = {
         ...message,
-        status: "DELIVERED",
+        status: acknowledgedStatus,
       } as Message;
 
-      dispatch(pendingMessageActions.addOne(acknowledgedMessage));
+      if (acknowledgedStatus === "DELIVERED")
+        dispatch(pendingMessageActions.addOne(acknowledgedMessage));
 
-      pendingAcks.current.push({ ...message, status: "DELIVERED" });
+      pendingAcks.current.set(message.uuid, acknowledgedMessage);
 
       if (ackTimeout.current) {
         clearTimeout(ackTimeout.current);
       }
 
       const timeout = setTimeout(() => {
-        const payload = [...pendingAcks.current] as Message[];
-        pendingAcks.current = [] as Message[];
+        const payload = Array.from(pendingAcks.current.values()) as Message[];
+        pendingAcks.current.clear();
 
         clientRef.current?.publish({
           destination: "/app/post.acknowledge",
@@ -185,8 +201,6 @@ function WebSocketProvider({
         dispatch(pendingMessageActions.addMany(deliveredMessages));
 
         sendAcknowledgementImmediately(sentMessages);
-        // sent message to acknowledged directly.
-        // console.log("RECEIVED : ", deliveredMessages);
       })();
 
       stompClient.subscribe("/user/queue/messages", (message) => {
@@ -209,7 +223,9 @@ function WebSocketProvider({
         }
         dispatch(updateMessage(incoming.message));
 
-        sendAcknowledgement(incoming.message);
+        if (incoming.message.status !== "READ") {
+          sendAcknowledgement(incoming.message);
+        }
       });
 
       stompClient.subscribe("/user/queue/rooms", (message) => {
@@ -230,7 +246,9 @@ function WebSocketProvider({
             }
             dispatch(updateMessage(incoming.message));
 
-            sendAcknowledgement(incoming.message);
+            if (incoming.message.status !== "READ") {
+              sendAcknowledgement(incoming.message);
+            }
           },
         );
       });
@@ -308,7 +326,9 @@ function WebSocketProvider({
 
               dispatch(updateMessage(incoming.message));
 
-              sendAcknowledgement(incoming.message);
+              if (incoming.message.status !== "READ") {
+                sendAcknowledgement(incoming.message);
+              }
             },
           );
         }
@@ -510,16 +530,6 @@ function WebSocketProvider({
     }
   }
 
-  function sendReadAcknowledgement(messages: Message[]) {
-    if (!clientRef.current?.connected) return;
-    if (messages.length <= 0) return;
-
-    clientRef.current.publish({
-      destination: "/app/post.acknowledge",
-      body: JSON.stringify({ acknowledgeableMessages: messages }),
-    });
-  }
-
   return (
     <WebSocketContext.Provider
       value={{
@@ -528,7 +538,7 @@ function WebSocketProvider({
         postGroup,
         sendGroupMessage,
         sendTyping,
-        sendReadAcknowledgement,
+        sendAcknowledgement,
       }}
     >
       {children}

@@ -17,6 +17,9 @@ function Rooms() {
   const dispatch = useDispatch<AppDispatch>();
   const rooms = useSelector(roomSelectors.selectAll);
   const user = useSelector((state: RootState) => state.user.user);
+  const pendingMessages = useSelector(
+    (state: RootState) => state.pendingMessages.roomMessageMap,
+  );
 
   const [query, setQuery] = useState<string>("");
 
@@ -93,17 +96,26 @@ function Rooms() {
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-slate-300 p-2 scrollbar-hide max-w-full">
           {rooms
             .filter((room) => matchsSearch(room, query))
-            .map((room) => (
-              <div
-                key={room.referenceNumber}
-                onClick={() => {
-                  if (!room.referenceNumber) return;
-                  selectRoomHandler(room.referenceNumber);
-                }}
-              >
-                <RoomBlock loggedInUser={user} room={room} />
-              </div>
-            ))}
+            .map((room) => {
+              if (!room.referenceNumber) return;
+              return (
+                <div
+                  key={room.referenceNumber}
+                  onClick={() => {
+                    if (!room.referenceNumber) return;
+                    selectRoomHandler(room.referenceNumber);
+                  }}
+                >
+                  <RoomBlock
+                    loggedInUser={user}
+                    room={room}
+                    pendingMessageCount={
+                      pendingMessages[room.referenceNumber]?.length ?? 0
+                    }
+                  />
+                </div>
+              );
+            })}
         </div>
       </div>
     </div>

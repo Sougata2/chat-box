@@ -5,14 +5,13 @@ import {
   DropdownMenuLabel,
   DropdownMenu,
 } from "@/components/ui/dropdown-menu";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { setMessage, saveRoom, updateMessage } from "@/app/store/chatSlice";
 import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
-import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
@@ -40,6 +39,7 @@ import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
+import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -59,8 +59,8 @@ function MediaChat() {
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingReadAcksMap = useRef<Map<string, Message>>(new Map());
-  const readAckTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pendingMessages = useRef<Map<string, Message>>(new Map());
+  const pendingMsgTimeout = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
 
   const messages = useSelector(messageSelectors.selectAll);
@@ -100,6 +100,27 @@ function MediaChat() {
     shouldAutoScroll.current = nearBottom;
   };
 
+  const flushPendingChat = useCallback(
+    (message: Message) => {
+      try {
+        pendingMessages.current.set(message.uuid, message);
+        if (pendingMsgTimeout.current) {
+          clearTimeout(pendingMsgTimeout.current);
+        }
+
+        pendingMsgTimeout.current = setTimeout(() => {
+          const flushableMessages = Array.from(pendingMessages.current.keys());
+          pendingMessages.current.clear();
+          dispatch(pendingMessageActions.removeAll(flushableMessages));
+          pendingMsgTimeout.current = null;
+        }, 1000);
+      } catch (error) {
+        toastError(error);
+      }
+    },
+    [dispatch],
+  );
+
   useEffect(() => {
     const container = chatContainerRef.current;
     if (!container) return;
@@ -114,31 +135,10 @@ function MediaChat() {
               const pendingMsg = messageEntities[messageId];
 
               if (!pendingMsg) return;
-              if (pendingMsg.senderEmail === user?.email) return;
-
               if (pendingMsg.status === "READ") return;
-              if (pendingReadAcksMap.current.has(pendingMsg.uuid)) return;
-              pendingReadAcksMap.current.set(pendingMsg.uuid, {
-                ...pendingMsg,
-                status: "READ",
-              });
-
-              if (readAckTimeout.current) {
-                clearTimeout(readAckTimeout.current);
-              }
-
-              readAckTimeout.current = setTimeout(() => {
-                const payload = Array.from(pendingReadAcksMap.current.values());
-
-                websocket.sendReadAcknowledgement(payload);
-
-                pendingMessageActions.removeAll(
-                  Array.from(pendingReadAcksMap.current.keys()),
-                );
-                pendingReadAcksMap.current.clear();
-
-                readAckTimeout.current = null;
-              }, 1000);
+              if (pendingMsg.senderEmail !== user?.email)
+                websocket.sendAcknowledgement(pendingMsg, "READ");
+              flushPendingChat(pendingMsg);
             }
           }
         });
@@ -155,7 +155,7 @@ function MediaChat() {
     return () => {
       observer.disconnect();
     };
-  }, [dispatch, messageEntities, messages, user, websocket]);
+  }, [dispatch, flushPendingChat, messageEntities, messages, user, websocket]);
 
   useEffect(() => {
     if (shouldAutoScroll.current) {

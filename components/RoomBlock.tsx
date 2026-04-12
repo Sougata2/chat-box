@@ -12,9 +12,11 @@ import RoomName from "./RoomName";
 function RoomBlock({
   room,
   loggedInUser,
+  pendingMessageCount,
 }: {
   room: Room;
   loggedInUser: User | null;
+  pendingMessageCount: number;
 }) {
   const typingMap = useSelector((state: RootState) => state.typing.typingMap);
   const chatPartners = useSelector(
@@ -31,7 +33,7 @@ function RoomBlock({
   if (!room.referenceNumber) return null;
 
   return (
-    <div className="flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer overflow-hidden">
+    <div className="relative flex gap-2.5 items-center rounded-xl px-2 py-4 hover:bg-slate-100 cursor-pointer overflow-hidden">
       {room.type === "GROUP" && <GroupAvatar />}
       {room.type === "PRIVATE" && (
         <Avatar className="h-10 w-10">
@@ -85,6 +87,11 @@ function RoomBlock({
                 )}
 
                 <span className="truncate">{room.lastMessage?.message}</span>
+                {pendingMessageCount > 0 && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-500 text-white font-semibold text-[14px] w-6 h-6 flex items-center justify-center rounded-full leading-none tabular-nums shadow-2xl">
+                    {pendingMessageCount}
+                  </span>
+                )}
               </>
             )}
           </span>
