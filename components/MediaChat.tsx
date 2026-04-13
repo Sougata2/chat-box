@@ -473,6 +473,7 @@ function MediaChat() {
               {/* MESSAGE-BLOCK */}
               {message.type === "SYSTEM" ? (
                 <div
+                  data-id={message.uuid}
                   className={`flex items-center gap-1 mx-auto my-2 px-3 py-1 text-xs text-gray-600 bg-yellow-100 rounded-lg shadow-sm w-fit max-w-[70%] text-center`}
                 >
                   <span>
