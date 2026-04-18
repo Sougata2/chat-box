@@ -152,6 +152,15 @@ function WebSocketProvider({
     }
   }, []);
 
+  const fetchUnreadMessages = useCallback(async () => {
+    try {
+      const response = await msgClient.get("/messages/unread-messages");
+      return response.data;
+    } catch (error) {
+      toastError(error);
+    }
+  }, []);
+
   useEffect(() => {
     debouncedTypingRef.current = debounce(
       (reference: string, username: string, status: TypingStatus) => {
@@ -194,11 +203,9 @@ function WebSocketProvider({
     stompClient.onConnect = () => {
       (async () => {
         const sentMessages = (await fetchPendingMessages("SENT")) as Message[];
-        const deliveredMessages = (await fetchPendingMessages(
-          "DELIVERED",
-        )) as Message[];
+        const unreadMessages = (await fetchUnreadMessages()) as Message[];
 
-        dispatch(pendingMessageActions.addMany(deliveredMessages));
+        dispatch(pendingMessageActions.addMany(unreadMessages));
 
         sendAcknowledgementImmediately(sentMessages);
       })();
@@ -400,12 +407,13 @@ function WebSocketProvider({
       stompClient.deactivate();
     };
   }, [
-    token,
-    dispatch,
     csrfData,
-    sendAcknowledgement,
+    dispatch,
     fetchPendingMessages,
+    fetchUnreadMessages,
+    sendAcknowledgement,
     sendAcknowledgementImmediately,
+    token,
   ]);
 
   useEffect(() => {
