@@ -265,6 +265,17 @@ function WebSocketProvider({
         if (acknowledgedMessages.length === 0) return;
 
         const currentRoom = store.getState().chat.room;
+        const roomEntites = store.getState().rooms.entities;
+
+        // update the rooms list
+        acknowledgedMessages.forEach((ackmsg) => {
+          if (!ackmsg.roomRef) return;
+          const roomToUpdate = roomEntites[ackmsg.roomRef];
+          const isLastMessage = roomToUpdate.lastMessage?.uuid === ackmsg.uuid;
+          if (isLastMessage) {
+            dispatch(refreshRooms(ackmsg));
+          }
+        });
 
         // create map of room -> message[]
         const map = acknowledgedMessages.reduce(
@@ -289,16 +300,6 @@ function WebSocketProvider({
             map[currentRoom.referenceNumber];
 
           console.log(currentRoomAcknowledgedMessages);
-
-          const matchedLastMessage = currentRoomAcknowledgedMessages.find(
-            (m) => m.uuid === lastMessage?.uuid,
-          ) as Message;
-
-          console.log(matchedLastMessage);
-
-          if (matchedLastMessage) {
-            dispatch(refreshRooms(matchedLastMessage));
-          }
 
           dispatch(updateMessages(currentRoomAcknowledgedMessages));
         }
