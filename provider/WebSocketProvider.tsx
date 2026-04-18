@@ -140,21 +140,17 @@ function WebSocketProvider({
     }
   }, []);
 
-  const fetchPendingMessages = useCallback(async (status: Status) => {
+  const fetchUnreadMessages = useCallback(async () => {
     try {
-      const response = await msgClient.get(
-        `/messages/pending-message/${status}`,
-      );
-      const pendingMessages = response.data as Message[];
-      return pendingMessages;
+      const response = await msgClient.get("/messages/unread-messages");
+      return response.data;
     } catch (error) {
       toastError(error);
     }
   }, []);
-
-  const fetchUnreadMessages = useCallback(async () => {
+  const fetchUnDeliveredMessages = useCallback(async () => {
     try {
-      const response = await msgClient.get("/messages/unread-messages");
+      const response = await msgClient.get("/messages//undelivered-messages");
       return response.data;
     } catch (error) {
       toastError(error);
@@ -202,12 +198,14 @@ function WebSocketProvider({
 
     stompClient.onConnect = () => {
       (async () => {
-        const sentMessages = (await fetchPendingMessages("SENT")) as Message[];
+        const undeliveredMessages =
+          (await fetchUnDeliveredMessages()) as Message[];
         const unreadMessages = (await fetchUnreadMessages()) as Message[];
+        console.log("Unread messages", unreadMessages);
 
         dispatch(pendingMessageActions.addMany(unreadMessages));
 
-        sendAcknowledgementImmediately(sentMessages);
+        sendAcknowledgementImmediately(undeliveredMessages);
       })();
 
       stompClient.subscribe("/user/queue/messages", (message) => {
@@ -409,9 +407,9 @@ function WebSocketProvider({
   }, [
     csrfData,
     dispatch,
-    fetchPendingMessages,
     fetchUnreadMessages,
     sendAcknowledgement,
+    fetchUnDeliveredMessages,
     sendAcknowledgementImmediately,
     token,
   ]);
