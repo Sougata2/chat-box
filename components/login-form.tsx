@@ -59,7 +59,6 @@ export function LoginForm({
       toast.warning("Service Worker not supported");
       return;
     }
-    await Notification.requestPermission();
     try {
       const registration = await navigator.serviceWorker.ready;
       subscription = await registration.pushManager.subscribe({
