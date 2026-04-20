@@ -14,6 +14,7 @@ import {
   FieldGroup,
   Field,
 } from "@/components/ui/field";
+import { notification } from "@/app/clients/notificationClient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/store/store";
@@ -26,12 +27,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { auth } from "@/app/clients/authClient";
-import { chat } from "@/app/clients/chatClient";
-import { cn } from "@/lib/utils";
+import { User } from "@/types/types";
+import { cn, urlBase64ToUint8Array } from "@/lib/utils";
 import { z } from "zod";
 
 import Link from "next/link";
-import { User } from "@/types/types";
 
 export function LoginForm({
   className,
@@ -59,11 +59,14 @@ export function LoginForm({
       toast.warning("Service Worker not supported");
       return;
     }
+    await Notification.requestPermission();
     try {
       const registration = await navigator.serviceWorker.ready;
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+        ),
       });
     } catch (error) {
       toast.error((error as Error).message);
@@ -71,7 +74,7 @@ export function LoginForm({
 
     try {
       if (subscription) {
-        await chat.post("/push-notification/subscribe", subscription);
+        await notification.post("/web-push/subscribe", subscription);
       }
     } catch (error) {
       toastError(error);

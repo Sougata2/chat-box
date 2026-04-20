@@ -4,10 +4,16 @@ import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
 
 import WebSocketProvider from "@/provider/WebSocketProvider";
-import React from "react";
+import React, { useEffect } from "react";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { accessToken } = useSelector((state: RootState) => state.user);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  }, []);
 
   return (
     <WebSocketProvider token={accessToken}>
