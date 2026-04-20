@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { auth } from "@/app/clients/authClient";
 import { User } from "@/types/types";
-import { cn, urlBase64ToUint8Array } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { z } from "zod";
 
 import Link from "next/link";
@@ -64,9 +64,7 @@ export function LoginForm({
       const registration = await navigator.serviceWorker.ready;
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-        ),
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       });
     } catch (error) {
       toast.error((error as Error).message);
