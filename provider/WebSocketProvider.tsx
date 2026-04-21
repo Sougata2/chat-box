@@ -183,6 +183,26 @@ function WebSocketProvider({
   }, [fetchCsrfToken]);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      const client = clientRef.current;
+      if (!client?.connected) return;
+
+      client.publish({
+        destination: "/app/activity",
+        body: JSON.stringify({
+          active: document.visibilityState === "visible",
+        }),
+      });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!token) return;
     if (!csrfData?.headerName) return;
     if (!csrfData?.token) return;
@@ -392,7 +412,19 @@ function WebSocketProvider({
         });
       }, 60000); // store it for cleanup
 
+      const activityInterval = setInterval(() => {
+        if (!clientRef.current?.connected) return;
+        console.log("Activity", document.visibilityState === "visible");
+        clientRef.current.publish({
+          destination: "/app/activity",
+          body: JSON.stringify({
+            active: document.visibilityState === "visible",
+          }),
+        });
+      }, 30000);
+
       (stompClient as any).hbInterval = interval;
+      (stompClient as any).activityInterval = activityInterval;
     };
 
     stompClient.activate();
@@ -402,6 +434,9 @@ function WebSocketProvider({
     return () => {
       if ((stompClient as any).hbInterval) {
         clearInterval((stompClient as any).hbInterval);
+      }
+      if ((stompClient as any).activityInterval) {
+        clearInterval((stompClient as any).activityInterval);
       }
       stompClient.deactivate();
     };
