@@ -513,12 +513,17 @@ function MediaChat() {
                         isMe={isMe}
                         files={files[message.uuid]}
                         msg={message}
+                        type="IMAGE"
                       />
                       // <div>Image</div>
                     )}
                     {message.media === "DOCUMENT" && (
-                      // <MediaBubble isMe={isMe} media={} msg={msg} />
-                      <div>Document</div>
+                      <MediaBubble
+                        isMe={isMe}
+                        files={files[message.uuid]}
+                        msg={message}
+                        type="DOCUMENT"
+                      />
                     )}
                   </div>
                 </div>

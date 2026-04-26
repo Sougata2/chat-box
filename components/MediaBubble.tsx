@@ -7,10 +7,11 @@ import {
   Dialog,
 } from "@/components/ui/dialog";
 import { MdOutlineFileDownload } from "react-icons/md";
-import { File, Message } from "@/types/types";
+import { File, Media, Message } from "@/types/types";
 import { getNameColor } from "@/lib/utils";
 import { useSelector } from "react-redux";
 import { toastError } from "./toastError";
+import { FcDocument } from "react-icons/fc";
 import { RootState } from "@/app/store/store";
 import { TbCheck, TbChecks } from "react-icons/tb";
 import { FiClock } from "react-icons/fi";
@@ -24,10 +25,12 @@ function MediaBubble({
   msg,
   files,
   isMe,
+  type,
 }: {
   msg: Message;
   files: File[];
   isMe: boolean;
+  type: Media;
 }) {
   const token = useSelector((state: RootState) => state.user.accessToken);
   const previewMedia = files?.slice(0, MAX_PREVIEW) ?? [];
@@ -105,26 +108,37 @@ function MediaBubble({
                       ${isMe ? "border-emerald-400" : "border-slate-300"}
                     `}
                   >
-                    <Image
-                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${m.url}?token=${token}`}
-                      alt="media"
-                      fill
-                      unoptimized
-                      className="
-                        object-cover
+                    {type === "IMAGE" && (
+                      <div>
+                        <Image
+                          src={`${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${m.url}?token=${token}`}
+                          alt="media"
+                          fill
+                          unoptimized
+                          className="
+                      object-cover
                       "
-                    />
+                        />
 
-                    {isLast && (
-                      <div
-                        className="
+                        {isLast && (
+                          <div
+                            className="
                           flex
                           text-white text-xl font-semibold
                           bg-black/60
                           absolute inset-0 items-center justify-center
-                        "
-                      >
-                        +{remaining}
+                          "
+                          >
+                            +{remaining}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {type === "DOCUMENT" && (
+                      <div>
+                        <div className="flex justify-center items-center">
+                          <FcDocument size={180} />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -205,19 +219,29 @@ function MediaBubble({
                       items-center justify-center
                     "
                   >
-                    <Image
-                      src={`${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${m.url}?token=${token}`}
-                      alt="preview"
-                      width={1600}
-                      height={1600}
-                      unoptimized
-                      className="
+                    {type === "IMAGE" && (
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_SERVER_URL}/message-service/files/view/${m.url}?token=${token}`}
+                        alt="preview"
+                        width={1600}
+                        height={1600}
+                        unoptimized
+                        className="
                         object-contain
                         w-auto h-auto max-w-[92vw] max-h-[85vh]
                         rounded-lg
                         shadow-2xl
                       "
-                    />
+                      />
+                    )}
+
+                    {type === "DOCUMENT" && (
+                      <div>
+                        <div className="flex justify-center items-center">
+                          <FcDocument size={180} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
