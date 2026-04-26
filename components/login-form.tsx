@@ -175,6 +175,15 @@ export function LoginForm({
                 Sign up
               </Link>
             </FieldDescription>
+            <FieldDescription className="text-center">
+              Change your password ?{" "}
+              <Link
+                href="/reset-password"
+                className="underline underline-offset-4"
+              >
+                Reset Password
+              </Link>
+            </FieldDescription>
           </Field>
         </FieldGroup>
       </form>
