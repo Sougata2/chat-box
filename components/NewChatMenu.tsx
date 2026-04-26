@@ -56,6 +56,7 @@ function NewChatMenu() {
         if (!loggedInUser.id || !participant.id) return;
         const newRoom: Room = {
           type: "PRIVATE",
+          referenceNumber: null,
           name: null,
           participants: [{ ...participant } as User],
           lastMessage: null,

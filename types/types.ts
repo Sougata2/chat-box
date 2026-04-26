@@ -44,7 +44,7 @@ export type Message = {
 };
 
 export type Room = {
-  referenceNumber?: string;
+  referenceNumber?: string | null;
   type: Type;
   name: string | null;
   createdAt: string | null;

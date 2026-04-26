@@ -10,7 +10,12 @@ import {
   WebSocketContextType,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
-import { addFiles, updateMessage, updateMessages } from "@/app/store/chatSlice";
+import {
+  addFiles,
+  saveRoom,
+  updateMessage,
+  updateMessages,
+} from "@/app/store/chatSlice";
 import { AppDispatch, RootState, store } from "@/app/store/store";
 import { addPresence, updatePresence } from "@/app/store/presenceSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,6 +31,7 @@ import { chat } from "@/app/clients/chatClient";
 
 import debounce from "lodash.debounce";
 import React from "react";
+import { setParticipants } from "@/app/store/participantSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
@@ -83,8 +89,16 @@ function WebSocketProvider({
         status: acknowledgedStatus,
       } as Message;
 
-      if (acknowledgedStatus === "DELIVERED")
-        dispatch(pendingMessageActions.addOne(acknowledgedMessage));
+      const currentRoom = store.getState().chat.room;
+
+      if (
+        message.roomRef === currentRoom?.referenceNumber &&
+        document.visibilityState === "visible"
+      ) {
+      } else {
+        if (acknowledgedStatus === "DELIVERED")
+          dispatch(pendingMessageActions.addOne(acknowledgedMessage));
+      }
 
       pendingAcks.current.set(message.uuid, acknowledgedMessage);
 
@@ -221,10 +235,7 @@ function WebSocketProvider({
         const undeliveredMessages =
           (await fetchUnDeliveredMessages()) as Message[];
         const unreadMessages = (await fetchUnreadMessages()) as Message[];
-        console.log("Unread messages", unreadMessages);
-
         dispatch(pendingMessageActions.addMany(unreadMessages));
-
         sendAcknowledgementImmediately(undeliveredMessages);
       })();
 
@@ -233,6 +244,7 @@ function WebSocketProvider({
         if (!incoming.message.roomRef) return;
         const state = store.getState();
         const rooms = state.rooms.entities;
+        const currentRoom = state.chat.room;
 
         if (rooms[incoming.message.roomRef]) {
           dispatch(refreshRooms(incoming.message));
@@ -240,7 +252,26 @@ function WebSocketProvider({
           msgClient
             .get(`/rooms/reference/${incoming.message.roomRef}`)
             .then((response) => {
-              dispatch(addRoom(response.data));
+              const newRoom = response.data as Room;
+              dispatch(addRoom(newRoom));
+              if (!newRoom.participants) return;
+              dispatch(setParticipants(newRoom.participants));
+
+              if (currentRoom?.referenceNumber === null) {
+                // if same room open ,use it.
+                const currentRoomParticipants = currentRoom.participants?.map(
+                  (p) => p.email,
+                );
+                const newRoomParticipants = newRoom.participants?.map(
+                  (p) => p.email,
+                );
+                const isSameRoom = newRoomParticipants?.some((p) =>
+                  currentRoomParticipants?.includes(p),
+                );
+                if (isSameRoom) {
+                  dispatch(saveRoom(newRoom));
+                }
+              }
             });
         }
         if (incoming.files) {
@@ -260,22 +291,69 @@ function WebSocketProvider({
         // 2. add the new room.
         dispatch(addRoom(room));
 
-        // 3. subscribe the new room
-        stompClient.subscribe(
-          `/topic/room/${room.referenceNumber}`,
-          (message) => {
-            const incoming = JSON.parse(message.body) as IncomingMessage;
-            dispatch(refreshRooms(incoming.message));
-            if (incoming.files) {
-              dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
-            }
-            dispatch(updateMessage(incoming.message));
+        if (!room.referenceNumber) return;
 
-            if (incoming.message.status !== "READ") {
-              sendAcknowledgement(incoming.message);
+        if (room.type === "GROUP") {
+          stompClient.subscribe(
+            `/topic/room/${room.referenceNumber}`,
+            (message) => {
+              const incoming = JSON.parse(message.body) as IncomingMessage;
+
+              if (signedUser?.email === incoming.message.senderEmail) return;
+
+              dispatch(refreshRooms(incoming.message));
+
+              if (incoming.files) {
+                dispatch(addFiles({ [incoming.message.uuid]: incoming.files }));
+              }
+
+              dispatch(updateMessage(incoming.message));
+
+              if (incoming.message.status !== "READ") {
+                sendAcknowledgement(incoming.message);
+              }
+            },
+          );
+        }
+
+        // subscribe to typing
+        stompClient.subscribe(
+          `/topic/typing/${room.referenceNumber}`,
+          (message) => {
+            const signedUser = store.getState().user;
+            if (!signedUser) return;
+            if (!signedUser.user?.email) return;
+            const typing = JSON.parse(message.body) as TypingDto;
+            console.log("Typing", typing);
+            const { roomRef, status, username } = typing;
+            if (signedUser.user.email === username) return;
+
+            const key = `${roomRef}-${username}`;
+            if (status === "START") {
+              dispatch(addTyping(typing));
+            } else {
+              dispatch(removeTyping(typing));
             }
+
+            if (typingTimeouts.current.has(key)) {
+              clearTimeout(typingTimeouts.current.get(key));
+            }
+
+            const timeout = setTimeout(() => {
+              dispatch(removeTyping(typing));
+              typingTimeouts.current.delete(key);
+            }, 10000);
+
+            typingTimeouts.current.set(key, timeout);
           },
         );
+        subscriptions.current.add(room.referenceNumber);
+
+        // send acknowledgement of the last message of the room
+        if (!room.lastMessage) return;
+        if (room.lastMessage?.senderEmail === signedUser?.email) return;
+        if (room.lastMessage?.status !== "READ")
+          sendAcknowledgement(room.lastMessage);
       });
 
       stompClient.subscribe("/user/queue/acknowledge", (message) => {
