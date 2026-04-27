@@ -12,10 +12,12 @@ import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
+import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
 import { FaImages, FaLock } from "react-icons/fa6";
+import { setParticipants } from "@/app/store/participantSlice";
 import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
 import { useWebsocket } from "@/hooks/useWebsocket";
@@ -39,7 +41,6 @@ import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
-import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -339,6 +340,9 @@ function MediaChat() {
           referenceNumber: uuidv4(),
         });
         const newRoomData = newRoomResponse.data as Room;
+
+        if (!newRoomData.participants) return;
+        dispatch(setParticipants(newRoomData.participants));
 
         // update the current room
         dispatch(saveRoom(newRoomData));
