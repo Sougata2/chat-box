@@ -12,12 +12,10 @@ import { Media, Message, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
-import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { FileDispatchContext } from "@/app/contexts";
 import { Page, PageLocator } from "@/app/types/page";
 import { messageSelectors } from "@/app/store/adapter/messageAdapter";
 import { FaImages, FaLock } from "react-icons/fa6";
-import { setParticipants } from "@/app/store/participantSlice";
 import { IoDocumentText } from "react-icons/io5";
 import { AiOutlineSend } from "react-icons/ai";
 import { useWebsocket } from "@/hooks/useWebsocket";
@@ -41,6 +39,7 @@ import MessageBubble from "./ChatBubble";
 import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
+import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -73,9 +72,6 @@ function MediaChat() {
   const files = useSelector((state: RootState) => state.chat.files);
 
   const typing = useSelector((state: RootState) => state.typing.typingMap);
-  const pendingMessageSlice = useSelector(
-    (state: RootState) => state.pendingMessages.roomMessageMap,
-  );
 
   const [gifOpen, setGifOpen] = useState(false);
 
@@ -115,7 +111,7 @@ function MediaChat() {
         pendingMsgTimeout.current = setTimeout(() => {
           const flushableMessages = Array.from(pendingMessages.current.keys());
           pendingMessages.current.clear();
-          dispatch(pendingMessageActions.markAsSeenAll(flushableMessages));
+          dispatch(pendingMessageActions.removeAll(flushableMessages));
           pendingMsgTimeout.current = null;
         }, 1000);
       } catch (error) {
@@ -341,9 +337,6 @@ function MediaChat() {
         });
         const newRoomData = newRoomResponse.data as Room;
 
-        if (!newRoomData.participants) return;
-        dispatch(setParticipants(newRoomData.participants));
-
         // update the current room
         dispatch(saveRoom(newRoomData));
 
@@ -401,10 +394,6 @@ function MediaChat() {
           textareaRef.current.style.height = "44px";
         }
       });
-      if (room.referenceNumber)
-        dispatch(
-          pendingMessageActions.clearPendingMessages(room?.referenceNumber),
-        );
     } catch (error) {
       toastError(error);
     }
@@ -493,43 +482,26 @@ function MediaChat() {
                   {message.message}
                 </div>
               ) : (
-                <div>
-                  {room?.referenceNumber &&
-                    pendingMessageSlice[room?.referenceNumber] &&
-                    pendingMessageSlice[room?.referenceNumber][0]?.uuid ===
-                      message.uuid && (
-                      <div className="flex justify-center bg-white/20 backdrop-blur-lg border border-white/20 mb-3 py-1 rounded-3xl font-semibold">
-                        <div className="bg-white px-3 py-0.5 rounded-2xl">
-                          {pendingMessageSlice[room?.referenceNumber].length}{" "}
-                          Unread Message
-                          {pendingMessageSlice[room?.referenceNumber].length > 1
-                            ? "s"
-                            : ""}
-                        </div>
-                      </div>
-                    )}
-                  <div data-id={message.uuid}>
-                    {message.media === "TEXT" && (
-                      <MessageBubble isMe={isMe} msg={message} />
-                    )}
-                    {message.media === "IMAGE" && (
-                      <MediaBubble
-                        isMe={isMe}
-                        files={files[message.uuid]}
-                        msg={message}
-                        type="IMAGE"
-                      />
-                      // <div>Image</div>
-                    )}
-                    {message.media === "DOCUMENT" && (
-                      <MediaBubble
-                        isMe={isMe}
-                        files={files[message.uuid]}
-                        msg={message}
-                        type="DOCUMENT"
-                      />
-                    )}
-                  </div>
+                <div data-id={message.uuid}>
+                  {message.media === "TEXT" && (
+                    <MessageBubble isMe={isMe} msg={message} />
+                  )}
+                  {message.media === "IMAGE" && (
+                    <MediaBubble
+                      isMe={isMe}
+                      files={files[message.uuid]}
+                      msg={message}
+                      type="IMAGE"
+                    />
+                  )}
+                  {message.media === "DOCUMENT" && (
+                    <MediaBubble
+                      isMe={isMe}
+                      files={files[message.uuid]}
+                      msg={message}
+                      type="DOCUMENT"
+                    />
+                  )}
                 </div>
               )}
             </div>

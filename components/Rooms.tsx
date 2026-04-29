@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
-import { ChangeEvent, useCallback, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { resetStack, stackPage } from "@/app/store/pageSlice";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { Page, PageLocator } from "@/app/types/page";
@@ -12,7 +12,6 @@ import { Input } from "./ui/input";
 import { Room } from "@/types/types";
 
 import RoomBlock from "./RoomBlock";
-import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 
 function Rooms() {
   const dispatch = useDispatch<AppDispatch>();
@@ -21,20 +20,8 @@ function Rooms() {
   const pendingMessages = useSelector(
     (state: RootState) => state.pendingMessages.roomMessageMap,
   );
-  const messageViewMap = useSelector(
-    (state: RootState) => state.pendingMessages.messageViewMap,
-  );
-  const currentRoom = useSelector((state: RootState) => state.chat.room);
 
   const [query, setQuery] = useState<string>("");
-
-  const clearPendingMessages = useCallback(() => {
-    if (!currentRoom?.referenceNumber) return;
-    if (!pendingMessages[currentRoom.referenceNumber]) return;
-    dispatch(
-      pendingMessageActions.clearPendingMessages(currentRoom.referenceNumber),
-    );
-  }, [currentRoom, dispatch, pendingMessages]);
 
   function matchsSearch(room: Room, query: string) {
     if (!query) return true;
@@ -46,7 +33,6 @@ function Rooms() {
     try {
       const response = await message.get(`/rooms/reference/${reference}`);
       dispatch(saveRoom(response.data));
-      clearPendingMessages();
       dispatch(
         stackPage({
           stack: "window",
@@ -124,9 +110,7 @@ function Rooms() {
                     loggedInUser={user}
                     room={room}
                     pendingMessageCount={
-                      pendingMessages[room?.referenceNumber]?.filter(
-                        (p) => !messageViewMap[p.uuid],
-                      )?.length ?? 0
+                      pendingMessages[room.referenceNumber]?.length ?? 0
                     }
                   />
                 </div>

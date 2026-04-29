@@ -4,19 +4,16 @@ import { Message } from "@/types/types";
 export type PendingMessagesState = {
   roomMessageMap: Record<string, Message[]>;
   uuidMessageMap: Record<string, Message>;
-  messageViewMap: Record<string, boolean>;
 };
 
 const initialState: PendingMessagesState = {
   roomMessageMap: {},
   uuidMessageMap: {},
-  messageViewMap: {},
 };
 
 function addMessageToState(state: PendingMessagesState, message: Message) {
   if (state.uuidMessageMap[message.uuid]) return;
   state.uuidMessageMap[message.uuid] = message;
-  state.messageViewMap[message.uuid] = false;
   if (!message.roomRef) return;
   if (!state.roomMessageMap[message.roomRef])
     state.roomMessageMap[message.roomRef] = [] as Message[];
@@ -45,10 +42,6 @@ function removeMessageFromState(
   }
 }
 
-function markAsSeen(uuid: string, state: PendingMessagesState) {
-  state.messageViewMap[uuid] = true;
-}
-
 const pendingMessageSlice = createSlice({
   initialState,
   name: "pendingMessages",
@@ -69,22 +62,6 @@ const pendingMessageSlice = createSlice({
       action.payload.forEach((messageUuid) => {
         removeMessageFromState(state, messageUuid);
       });
-    },
-    markAsSeenAll(state, action: PayloadAction<string[]>) {
-      const uuids = action.payload;
-      uuids.forEach((uuid) => {
-        markAsSeen(uuid, state);
-      });
-    },
-    markAsSeenOne(state, action: PayloadAction<string>) {
-      const uuid = action.payload;
-      markAsSeen(uuid, state);
-    },
-    clearPendingMessages(state, action: PayloadAction<string>) {
-      const roomRef = action.payload;
-      if (!state.roomMessageMap[roomRef]) return;
-      if (state.roomMessageMap[roomRef].length === 0) return;
-      state.roomMessageMap[roomRef] = [];
     },
   },
 });

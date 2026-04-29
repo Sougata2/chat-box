@@ -24,6 +24,7 @@ import { addRoom, refreshRooms } from "@/app/store/roomSlice";
 import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { message as msgClient } from "@/app/clients/messageClient";
 import type { DebouncedFunc } from "lodash";
+import { setParticipants } from "@/app/store/participantSlice";
 import { toastError } from "@/components/toastError";
 import { CsrfData } from "@/app/types/CsrfData";
 import { Client } from "@stomp/stompjs";
@@ -31,7 +32,6 @@ import { chat } from "@/app/clients/chatClient";
 
 import debounce from "lodash.debounce";
 import React from "react";
-import { setParticipants } from "@/app/store/participantSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
@@ -89,16 +89,8 @@ function WebSocketProvider({
         status: acknowledgedStatus,
       } as Message;
 
-      const currentRoom = store.getState().chat.room;
-
-      if (
-        message.roomRef === currentRoom?.referenceNumber &&
-        document.visibilityState === "visible"
-      ) {
-      } else {
-        if (acknowledgedStatus === "DELIVERED")
-          dispatch(pendingMessageActions.addOne(acknowledgedMessage));
-      }
+      if (acknowledgedStatus === "DELIVERED")
+        dispatch(pendingMessageActions.addOne(acknowledgedMessage));
 
       pendingAcks.current.set(message.uuid, acknowledgedMessage);
 
