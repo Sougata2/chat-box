@@ -45,6 +45,15 @@ function Page() {
     }
   }, [dispatch]);
 
+  const fetchReadReceipts = useCallback(async () => {
+    try {
+      const response = await message.get("/messages/read-receipts");
+      console.log(response.data);
+    } catch (error) {
+      toastError(error);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       await fetchRooms();
@@ -56,6 +65,12 @@ function Page() {
   useEffect(() => {
     dispatch(initializePages());
   }, [dispatch]);
+
+  useEffect(() => {
+    (async () => {
+      await fetchReadReceipts();
+    })();
+  }, [fetchReadReceipts]);
 
   return (
     <div className="grid grid-cols-[70px_minmax(100,28%)_1fr] h-screen gap-4 py-2 px-3">
