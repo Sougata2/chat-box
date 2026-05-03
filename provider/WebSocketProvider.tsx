@@ -32,6 +32,7 @@ import { chat } from "@/app/clients/chatClient";
 
 import debounce from "lodash.debounce";
 import React from "react";
+import { readReceiptActions } from "@/app/store/readReceiptSlice";
 
 export const WebSocketContext = createContext<WebSocketContextType | null>(
   null,
@@ -272,6 +273,7 @@ function WebSocketProvider({
         dispatch(updateMessage(incoming.message));
 
         if (incoming.message.status !== "READ") {
+          dispatch(readReceiptActions.incrementCount(incoming.message));
           sendAcknowledgement(incoming.message);
         }
       });
@@ -423,6 +425,7 @@ function WebSocketProvider({
               dispatch(updateMessage(incoming.message));
 
               if (incoming.message.status !== "READ") {
+                dispatch(readReceiptActions.incrementCount(incoming.message));
                 sendAcknowledgement(incoming.message);
               }
             },

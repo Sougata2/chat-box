@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/app/store/store";
-import { ChangeEvent, useState } from "react";
+import { AppDispatch, RootState, store } from "@/app/store/store";
+import { ChangeEvent, useCallback, useState } from "react";
 import { resetStack, stackPage } from "@/app/store/pageSlice";
 import { LuMessageSquarePlus } from "react-icons/lu";
 import { Page, PageLocator } from "@/app/types/page";
@@ -9,19 +9,47 @@ import { toastError } from "./toastError";
 import { saveRoom } from "@/app/store/chatSlice";
 import { message } from "@/app/clients/messageClient";
 import { Input } from "./ui/input";
-import { Room } from "@/types/types";
+import { Receipt, Room } from "@/types/types";
 
 import RoomBlock from "./RoomBlock";
+import { readReceiptActions } from "@/app/store/readReceiptSlice";
 
 function Rooms() {
   const dispatch = useDispatch<AppDispatch>();
   const rooms = useSelector(roomSelectors.selectAll);
+  const roomMap = useSelector((state: RootState) => state.rooms.entities);
   const user = useSelector((state: RootState) => state.user.user);
   const pendingMessages = useSelector(
     (state: RootState) => state.pendingMessages.roomMessageMap,
   );
 
   const [query, setQuery] = useState<string>("");
+
+  const resolveLastSeen = useCallback(
+    async (room: Room) => {
+      if (!room) return;
+      if (!room.referenceNumber) return;
+      const pndingMsgs = pendingMessages[room.referenceNumber];
+      if (pndingMsgs && pndingMsgs.length > 0) {
+        const response = await message.get(
+          `/messages/read-receipt/${room.referenceNumber}`,
+        );
+        const receipt = response.data as Receipt;
+        if (receipt.lastSeen) {
+          dispatch(
+            readReceiptActions.setLastSeen({
+              lastSeen: receipt.lastSeen,
+              count: pndingMsgs.length,
+              roomRef: room.referenceNumber,
+            }),
+          );
+        }
+      } else {
+        dispatch(readReceiptActions.clearCount(room));
+      }
+    },
+    [dispatch, pendingMessages],
+  );
 
   function matchsSearch(room: Room, query: string) {
     if (!query) return true;
@@ -31,7 +59,14 @@ function Rooms() {
 
   async function selectRoomHandler(reference: string) {
     try {
+      const oldRoomRef = store.getState().chat.room?.referenceNumber;
+      if (oldRoomRef) {
+        const oldRoom = roomMap[oldRoomRef];
+        resolveLastSeen(oldRoom);
+        dispatch(readReceiptActions.setInactive(oldRoom));
+      }
       const response = await message.get(`/rooms/reference/${reference}`);
+      dispatch(readReceiptActions.setActive(response.data));
       dispatch(saveRoom(response.data));
       dispatch(
         stackPage({

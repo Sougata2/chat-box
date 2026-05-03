@@ -94,3 +94,11 @@ export type WebSocketContextType = {
   ) => void;
   sendAcknowledgement: (message: Message, status: Status) => void;
 };
+
+export type Receipt = {
+  count: number;
+  roomRef: string;
+  lastSeen: string | null;
+  isActive: boolean;
+  isAtBottom: boolean;
+};

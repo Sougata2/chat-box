@@ -8,7 +8,7 @@ import {
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { setMessage, saveRoom, updateMessage } from "@/app/store/chatSlice";
-import { Media, Message, Room, User } from "@/types/types";
+import { Media, Message, Receipt, Room, User } from "@/types/types";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { addRoom, refreshRooms } from "@/app/store/roomSlice";
@@ -40,6 +40,7 @@ import MediaBubble from "./MediaBubble";
 import GifPicker from "./GifPicker";
 import React from "react";
 import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
+import { readReceiptActions } from "@/app/store/readReceiptSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -62,6 +63,9 @@ function MediaChat() {
   const pendingMessages = useRef<Map<string, Message>>(new Map());
   const pendingMsgTimeout = useRef<NodeJS.Timeout | null>(null);
   const isTypingRef = useRef(false);
+  const isUserAtBottom = useRef(true);
+  const unreadStampRef = useRef<HTMLDivElement | null>(null);
+  const hasScrolledToUnread = useRef(false);
 
   const messages = useSelector(messageSelectors.selectAll);
   const messageEntities = useSelector(
@@ -69,9 +73,15 @@ function MediaChat() {
   );
   const user = useSelector((state: RootState) => state.user.user);
   const room = useSelector((state: RootState) => state.chat.room);
+  const roomMap = useSelector((state: RootState) => state.rooms.entities);
   const files = useSelector((state: RootState) => state.chat.files);
-
+  const readReceiptMap = useSelector(
+    (state: RootState) => state.readReceipt.receiptMap,
+  );
   const typing = useSelector((state: RootState) => state.typing.typingMap);
+  const pendingMessageRoomMap = useSelector(
+    (state: RootState) => state.pendingMessages.roomMessageMap,
+  );
 
   const [gifOpen, setGifOpen] = useState(false);
 
@@ -96,8 +106,22 @@ function MediaChat() {
     const el = chatContainerRef.current;
     if (!el) return;
 
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-    shouldAutoScroll.current = nearBottom;
+    const threshold = 80;
+
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+    const atBottom = distance <= threshold;
+
+    shouldAutoScroll.current = atBottom;
+    isUserAtBottom.current = atBottom;
+
+    if (room?.referenceNumber) {
+      if (atBottom) {
+        dispatch(readReceiptActions.setAtBottom(room));
+      } else {
+        dispatch(readReceiptActions.setNotAtBottom(room));
+      }
+    }
   };
 
   const flushPendingChat = useCallback(
@@ -120,6 +144,52 @@ function MediaChat() {
     },
     [dispatch],
   );
+
+  const resolveLastSeen = useCallback(async () => {
+    if (room && room.referenceNumber) {
+      const revisedRoom = roomMap[room.referenceNumber];
+      const pndingMsgs = pendingMessageRoomMap[room.referenceNumber];
+      if (pndingMsgs && pndingMsgs.length > 0) {
+        const response = await message.get(
+          `/messages/read-receipt/${revisedRoom.referenceNumber}`,
+        );
+        const receipt = response.data as Receipt;
+        if (receipt.lastSeen) {
+          dispatch(
+            readReceiptActions.setLastSeen({
+              lastSeen: receipt.lastSeen,
+              count: pndingMsgs.length,
+              roomRef: room.referenceNumber,
+            }),
+          );
+        }
+      } else {
+        // clear the counter.
+        dispatch(readReceiptActions.clearCount(revisedRoom));
+      }
+    }
+  }, [dispatch, pendingMessageRoomMap, room, roomMap]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (room && room.referenceNumber) {
+        const revisedRoom = roomMap[room.referenceNumber];
+
+        if (document.visibilityState === "visible") {
+          dispatch(readReceiptActions.setActive(revisedRoom));
+        }
+        if (document.visibilityState === "hidden") {
+          resolveLastSeen();
+          dispatch(readReceiptActions.setInactive(revisedRoom));
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [dispatch, resolveLastSeen, room, roomMap]);
 
   useEffect(() => {
     const container = chatContainerRef.current;
@@ -158,12 +228,38 @@ function MediaChat() {
   }, [dispatch, flushPendingChat, messageEntities, messages, user, websocket]);
 
   useEffect(() => {
-    if (shouldAutoScroll.current) {
-      requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!room?.referenceNumber) return;
+      const readReceipt = readReceiptMap[room.referenceNumber];
+
+      const shouldScrollToUnread =
+        readReceipt?.count !== undefined &&
+        readReceipt.count > 0 &&
+        unreadStampRef.current &&
+        !hasScrolledToUnread.current;
+
+      // PRIORITY 1 = unread stamp
+      if (shouldScrollToUnread && unreadStampRef.current) {
+        unreadStampRef.current.scrollIntoView({
+          behavior: "instant",
+          block: "center",
+        });
+
+        shouldAutoScroll.current = false;
+        hasScrolledToUnread.current = true;
+        return;
+      }
+
+      // PRIORITY 2 = normal bottom scroll
+      if (shouldAutoScroll.current) {
         scrollToBottom();
-      });
-    }
-  }, [messages]);
+      }
+    });
+  }, [messages, readReceiptMap, room]);
+
+  useEffect(() => {
+    hasScrolledToUnread.current = false;
+  }, [room?.referenceNumber]);
 
   useEffect(() => {
     sendAudioRef.current = new Audio("/sent.mp3");
@@ -394,6 +490,7 @@ function MediaChat() {
           textareaRef.current.style.height = "44px";
         }
       });
+      resolveLastSeen();
     } catch (error) {
       toastError(error);
     }
@@ -444,6 +541,9 @@ function MediaChat() {
             currentDate === format(new Date(), "dd-MM-yyyy")
               ? "Today"
               : currentDate;
+
+          let readReceipt = null;
+          if (message.roomRef) readReceipt = readReceiptMap[message.roomRef];
 
           return (
             <div key={message.uuid}>
@@ -502,6 +602,20 @@ function MediaChat() {
                       type="DOCUMENT"
                     />
                   )}
+                  {readReceipt?.count !== undefined &&
+                    readReceipt.count > 0 &&
+                    readReceipt?.lastSeen === message.uuid && (
+                      <div
+                        ref={unreadStampRef}
+                        data-id="unread-stamp"
+                        className="flex justify-center bg-white/20 backdrop-blur-lg border border-white/20 py-1 rounded-3xl font-semibold mt-3"
+                      >
+                        <div className="bg-white px-3 py-0.5 rounded-2xl">
+                          {readReceipt.count} Unread Message
+                          {readReceipt.count > 1 ? "s" : ""}
+                        </div>
+                      </div>
+                    )}
                 </div>
               )}
             </div>

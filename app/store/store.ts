@@ -3,6 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import pendingMessageReducer from "@/app/store/pendingMessageSlice";
 import visibleMessageReducer from "@/app/store/visibleMessageSlice";
 import participantReducer from "@/app/store/participantSlice";
+import readReceiptReducer from "@/app/store/readReceiptSlice";
 import presenceReducer from "@/app/store/presenceSlice";
 import typingReducer from "@/app/store/typingSlice";
 import userReducer from "@/app/store/userSlice";
@@ -18,6 +19,7 @@ export const store = configureStore({
     rooms: roomReducer,
     typing: typingReducer,
     presence: presenceReducer,
+    readReceipt: readReceiptReducer,
     participants: participantReducer,
     visibleMessage: visibleMessageReducer,
     pendingMessages: pendingMessageReducer,
