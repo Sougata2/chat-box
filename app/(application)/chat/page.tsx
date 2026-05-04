@@ -2,7 +2,6 @@
 
 import { FileContext, FileDispatchContext } from "@/app/contexts";
 import { useCallback, useEffect, useState } from "react";
-import { readReceiptActions } from "@/app/store/readReceiptSlice";
 import { initializePages } from "@/app/store/pageSlice";
 import { setParticipants } from "@/app/store/participantSlice";
 import { useDispatch } from "react-redux";
@@ -46,16 +45,6 @@ function Page() {
     }
   }, [dispatch]);
 
-  const fetchReadReceipts = useCallback(async () => {
-    try {
-      const response = await message.get("/messages/read-receipts");
-      console.log(response.data);
-      dispatch(readReceiptActions.register(response.data));
-    } catch (error) {
-      toastError(error);
-    }
-  }, [dispatch]);
-
   useEffect(() => {
     (async () => {
       await fetchRooms();
@@ -67,12 +56,6 @@ function Page() {
   useEffect(() => {
     dispatch(initializePages());
   }, [dispatch]);
-
-  useEffect(() => {
-    (async () => {
-      await fetchReadReceipts();
-    })();
-  }, [fetchReadReceipts]);
 
   return (
     <div className="grid grid-cols-[70px_minmax(100,28%)_1fr] h-screen gap-4 py-2 px-3">

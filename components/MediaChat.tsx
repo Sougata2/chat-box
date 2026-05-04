@@ -41,6 +41,7 @@ import GifPicker from "./GifPicker";
 import React from "react";
 import { pendingMessageActions } from "@/app/store/pendingMessageSlice";
 import { readReceiptActions } from "@/app/store/readReceiptSlice";
+import { setParticipants } from "@/app/store/participantSlice";
 
 const formSchema = z.object({
   message: z.string().nonempty(),
@@ -123,6 +124,34 @@ function MediaChat() {
       }
     }
   };
+
+  const updateAtBottom = useCallback(() => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+
+    const notScrollable = el.scrollHeight <= el.clientHeight;
+
+    const atBottom =
+      notScrollable || el.scrollTop + el.clientHeight >= el.scrollHeight - 80;
+
+    isUserAtBottom.current = atBottom;
+    shouldAutoScroll.current = atBottom;
+
+    if (room?.referenceNumber) {
+      dispatch(
+        atBottom
+          ? readReceiptActions.setAtBottom(room)
+          : readReceiptActions.setNotAtBottom(room),
+      );
+    }
+  }, [dispatch, room]);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      updateAtBottom();
+    }, 0);
+    return () => clearTimeout(id);
+  }, [messages, room, updateAtBottom]);
 
   const flushPendingChat = useCallback(
     (message: Message) => {
@@ -433,11 +462,25 @@ function MediaChat() {
         });
         const newRoomData = newRoomResponse.data as Room;
 
+        // set chat participants
+        if (!newRoomData.participants) return;
+        dispatch(setParticipants(newRoomData.participants));
+
         // update the current room
         dispatch(saveRoom(newRoomData));
 
         // add the new room in the room list.
         dispatch(addRoom(newRoomData));
+
+        const receipt = {
+          count: 0,
+          lastSeen: null,
+          isActive: true,
+          isAtBottom: true,
+          roomRef: newRoomData.referenceNumber,
+        } as Receipt;
+
+        dispatch(readReceiptActions.add(receipt));
 
         targetRoom = { ...newRoomData };
       }

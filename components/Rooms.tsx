@@ -65,6 +65,15 @@ function Rooms() {
         resolveLastSeen(oldRoom);
         dispatch(readReceiptActions.setInactive(oldRoom));
       }
+      const receiptResponse = await message.get(
+        `/messages/read-receipt/${reference}`,
+      );
+      const receiptData = {
+        ...receiptResponse.data,
+        isActive: false,
+        isAtBottom: false,
+      } as Receipt;
+      dispatch(readReceiptActions.add(receiptData));
       const response = await message.get(`/rooms/reference/${reference}`);
       dispatch(readReceiptActions.setActive(response.data));
       dispatch(saveRoom(response.data));

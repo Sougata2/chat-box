@@ -8,6 +8,7 @@ import {
   TypingStatus,
   IncomingMessage,
   WebSocketContextType,
+  Receipt,
 } from "@/types/types";
 import { createContext, useCallback, useEffect, useState, useRef } from "react";
 import {
@@ -155,9 +156,10 @@ function WebSocketProvider({
       toastError(error);
     }
   }, []);
+
   const fetchUnDeliveredMessages = useCallback(async () => {
     try {
-      const response = await msgClient.get("/messages//undelivered-messages");
+      const response = await msgClient.get("/messages/undelivered-messages");
       return response.data;
     } catch (error) {
       toastError(error);
@@ -250,6 +252,14 @@ function WebSocketProvider({
               if (!newRoom.participants) return;
               dispatch(setParticipants(newRoom.participants));
 
+              const receipt = {
+                count: 0,
+                lastSeen: null,
+                isActive: false,
+                isAtBottom: false,
+                roomRef: incoming.message.roomRef,
+              } as Receipt;
+
               if (currentRoom?.referenceNumber === null) {
                 // if same room open ,use it.
                 const currentRoomParticipants = currentRoom.participants?.map(
@@ -262,9 +272,14 @@ function WebSocketProvider({
                   currentRoomParticipants?.includes(p),
                 );
                 if (isSameRoom) {
+                  receipt.isActive = true;
+                  receipt.isAtBottom = true;
+                  receipt.lastSeen = incoming.message.uuid;
                   dispatch(saveRoom(newRoom));
                 }
               }
+
+              dispatch(readReceiptActions.add(receipt));
             });
         }
         if (incoming.files) {
@@ -282,8 +297,19 @@ function WebSocketProvider({
         // 1. get the new room information
         const room = JSON.parse(message.body) as Room;
 
+        // TODO : CHECK IF THIS IS EVEN REQUIRED OR NOT
+        const receipt = {
+          count: 0,
+          lastSeen: null,
+          isActive: false,
+          isAtBottom: false,
+          roomRef: room.referenceNumber,
+        } as Receipt;
+
         // 2. add the new room.
         dispatch(addRoom(room));
+
+        dispatch(readReceiptActions.add(receipt));
 
         if (!room.referenceNumber) return;
 
