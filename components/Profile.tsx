@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store/store";
 import { LuMessageSquareText } from "react-icons/lu";
+import { notification } from "@/app/clients/notificationClient";
 import { PageLocator } from "@/app/types/page";
 import { toastError } from "./toastError";
 import { resetRooms } from "@/app/store/roomSlice";
@@ -31,6 +32,29 @@ function Profile() {
   const dispatch = useDispatch<AppDispatch>();
   const loggedInUser = useSelector((state: RootState) => state.user.user);
 
+  async function unsubscribePushNotification() {
+    if (!("serviceWorker" in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        // send endpoint to backend first
+        await notification.delete("/web-push/unsubscribe", {
+          data: {
+            endpoint: subscription.endpoint,
+          },
+        });
+
+        // remove from browser
+        await subscription.unsubscribe();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async function logout() {
     try {
       dispatch(resetUser());
@@ -38,6 +62,7 @@ function Profile() {
       dispatch(resetChat());
       dispatch(resetStack({ stack: "window" } as PageLocator));
       await auth.post("/auth/logout");
+      await unsubscribePushNotification();
       router.replace("/sign-in");
     } catch (error) {
       toastError(error);
