@@ -14,7 +14,7 @@ import { Page, PageLocator } from "@/app/types/page";
 import { v4 as uuidv4 } from "uuid";
 import { useWebsocket } from "@/hooks/useWebsocket";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Room, User } from "@/types/types";
+import { Receipt, Room, User } from "@/types/types";
 import { toastError } from "./toastError";
 import { saveRoom } from "@/app/store/chatSlice";
 import { MdCheck } from "react-icons/md";
@@ -23,6 +23,7 @@ import { message } from "@/app/clients/messageClient";
 import { addRoom } from "@/app/store/roomSlice";
 import { Input } from "./ui/input";
 import { z } from "zod";
+import { readReceiptActions } from "@/app/store/readReceiptSlice";
 
 const formSchema = z.object({
   name: z.string().nonempty({ message: "Group Name cannot be empty" }),
@@ -67,6 +68,16 @@ function NewGroupForm({ selectedContacts }: { selectedContacts: User[] }) {
 
       // 5. notify the participants about the new room.
       websocket.postGroup(newRoom);
+
+      const receipt = {
+        count: 0,
+        lastSeen: null,
+        isActive: true,
+        isAtBottom: true,
+        roomRef: newRoom.referenceNumber,
+      } as Receipt;
+
+      dispatch(readReceiptActions.add(receipt));
 
       // 6. let the user subscribe to the new room (inside web socket provider).
 
